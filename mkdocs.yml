@@ -1,0 +1,19 @@
+site_name: xlsxfill
+
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - Syntax: syntax.md
+  - API: api.md
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+
+extra:
+  version:
+    provider: mike
