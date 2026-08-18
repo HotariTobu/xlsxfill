@@ -1,0 +1,22 @@
+{
+  "rbitems": [
+    {"name": "apple", "qty": 2, "price": 100},
+    {"name": "orange", "qty": 3, "price": 50},
+    {"name": "banana", "qty": 1, "price": 80}
+  ],
+  "hfx": [{"qty": 2, "price": 100}, {"qty": 3, "price": 50}, {"qty": 1, "price": 80}],
+  "vg": [{"qty": 1}, {"qty": 2}, {"qty": 3}],
+  "cg": [{"qty": 1}, {"qty": 2}, {"qty": 3}],
+  "voitems": [{"name": "a", "qty": 1}, {"name": "b", "qty": 2}, {"name": "c", "qty": 3}],
+  "hoitems": [{"qty": 1}, {"qty": 2}, {"qty": 3}],
+  "vfdepts": [
+    {"name": "Sales", "staff": [{"name": "Alice", "salary": 300}, {"name": "Bob", "salary": 200}]},
+    {"name": "Dev", "staff": [{"name": "Carol", "salary": 400}]}
+  ],
+  "hfdepts": [
+    {"name": "Sales", "staff": [{"name": "Alice", "salary": 300}, {"name": "Bob", "salary": 200}]},
+    {"name": "Dev", "staff": [{"name": "Carol", "salary": 400}]}
+  ],
+  "rcs": [{"name": "Sales", "staff": [1, 2]}, {"name": "Dev", "staff": [3]}],
+  "crs": [{"name": "Alice", "tasks": [1, 2]}, {"name": "Bob", "tasks": [3]}]
+}

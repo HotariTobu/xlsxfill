@@ -1,0 +1,7 @@
+{
+  "img": {"alt": "logo", "data": {"$bytes": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA8UlEQVR4AaSTyxKCMAxFA4OPnWvf//938lDHFZ5bKGOltczoNDZJb07TAmVv1v9jpQ2/rjArlpqZbbEXZh6wp4tWiZyh26Cp2UyQAUDQkcxCvoupGQBycpBYser8EeTbCDkgblxi/CNe4zasu7bxpxEAlEWkuzhS5CDMKm7J6+ySBDYDaBXxJyRZLG0UoAVMj0m7aiaMjyiAtlfI9W4IcCKuiaNjBkCs4jvH0Nl1sbqLM/koJAAgCor9lsCSkAmQKs5BHIDiCuGDnVzb+NHBujq5oL95gQMQPFlU+7i/BzrdxdVDPKAisfizZgt1sGO2NwAAAP//5rLMuQAAAAZJREFUAwAD/nMBaJiA+QAAAABJRU5ErkJggg=="}},
+  "img2": {"data": {"$bytes": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAUElEQVR4AeySwQoAIAhDZ///z8UaeTIhu5pIxvIdpgPzLwZ4DHFQY8aqURKAVTEbAMiD2yiPsYkuwPlYuAWw3oOCd94iE/35XgiQzHkjE30BAAD//wGmD9AAAAAGSURBVAMAvuxQASaLFsEAAAAASUVORK5CYII="}},
+  "a": {"title": "Details", "url": "https://example.com"},
+  "noimg": {"data": null},
+  "blankImage": {"data": {"$bytes": ""}}
+}

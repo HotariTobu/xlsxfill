@@ -1,0 +1,6 @@
+{
+  "sheets": [
+    {"name": "A", "departments": [{"name": "Sales", "staff": ["Alice"]}]},
+    {"name": "B", "departments": [{"name": "Dev", "staff": ["Bob", "Carol"]}]}
+  ]
+}
