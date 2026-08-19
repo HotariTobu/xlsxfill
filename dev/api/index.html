@@ -1220,11 +1220,7 @@
 <span class="normal">38</span>
 <span class="normal">39</span>
 <span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fill</span><span class="p">(</span>
+<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fill</span><span class="p">(</span>
     <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="n">BinaryIO</span><span class="p">,</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Value</span><span class="p">],</span>
     <span class="n">output</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="n">BinaryIO</span><span class="p">,</span>
@@ -1243,13 +1239,9 @@
 <span class="sd">        DataError: The input data as a whole is unusable.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    <span class="n">wb</span> <span class="o">=</span> <span class="n">Workbook</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
-    <span class="n">problems</span> <span class="o">=</span> <span class="n">Book</span><span class="p">(</span><span class="n">wb</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-        <span class="k">with</span> <span class="n">Path</span><span class="p">(</span><span class="n">output</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">stream</span><span class="p">:</span>
-            <span class="n">wb</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">wb</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+    <span class="n">book</span> <span class="o">=</span> <span class="n">Excel</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+    <span class="n">problems</span> <span class="o">=</span> <span class="n">Book</span><span class="p">(</span><span class="n">book</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    <span class="n">book</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">problems</span>
 </code></pre></div></td></tr></table></div>
             </details>
