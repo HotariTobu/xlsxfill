@@ -1,0 +1,461 @@
+"""Duplicating and deleting rows and columns, references and all.
+
+``Worksheet.insert_rows`` writes new data rows and pushes the rest down,
+carrying only the ``s`` attributes of a template row; it never duplicates
+cell content, and ``insert_columns`` documents that it rewrites neither
+formula text nor drawing anchors. These do the whole job: the copies
+carry their cells, and every reference that pointed into the moved region
+is followed.
+
+References follow Excel's own rules, and there is nothing else on offer:
+a relative reference in a copy keeps its distance from the cell it came
+from, an absolute one stays put, and a range reaching over the region
+stretches. Anything a template wants pinned it pins the way Excel pins
+it, with ``$``.
+
+A range laid over the region rather than pointing at it — a merged
+block, a conditional format, a validation — is repeated with it, once
+per copy. It described the block, and now there are several.
+"""
+
+from __future__ import annotations
+
+from copy import deepcopy
+from typing import TYPE_CHECKING
+
+from xlsxedit.opc.constants import SML_NS
+from xlsxedit.oxml.address import col_to_index
+
+from _patched_xlsxedit._clone import cell_column, copy_columns, copy_rows
+from _patched_xlsxedit._remap import (
+    expand_anchors,
+    merged_refs,
+    rebase_formulas,
+    remap_defined_names,
+    remap_range_ref,
+    remap_sheet_references,
+    set_merged_refs,
+)
+from _patched_xlsxedit._tables import remap_tables
+
+if TYPE_CHECKING:
+    from lxml.etree import _Element
+    from xlsxedit.workbook import Workbook
+    from xlsxedit.worksheet import Worksheet
+
+    from _patched_xlsxedit._remap import EndpointMapper, PointMapper
+
+_ROW = f"{{{SML_NS}}}row"
+_C = f"{{{SML_NS}}}c"
+_SHEET_DATA = f"{{{SML_NS}}}sheetData"
+_COLS = f"{{{SML_NS}}}cols"
+_COL = f"{{{SML_NS}}}col"
+_CONDITIONAL_FORMATTING = f"{{{SML_NS}}}conditionalFormatting"
+_DATA_VALIDATIONS = f"{{{SML_NS}}}dataValidations"
+_DATA_VALIDATION = f"{{{SML_NS}}}dataValidation"
+
+
+class _Span:
+    """A region of one axis that was repeated in place.
+
+    ``lo`` through ``hi`` is the region as it was. It stays where it is
+    and ``copies`` further copies follow it, so the axis grows by
+    ``copies * size`` and everything past ``hi`` moves by that much.
+    """
+
+    def __init__(self, lo: int, hi: int, copies: int) -> None:
+        """Record that ``lo``..``hi`` gained ``copies`` copies below it."""
+        self.lo = lo
+        self.hi = hi
+        self.copies = copies
+
+    @property
+    def size(self) -> int:
+        """How many lines the region covers."""
+        return self.hi - self.lo + 1
+
+    @property
+    def added(self) -> int:
+        """How many lines the whole operation adds."""
+        return self.copies * self.size
+
+    def copy_of(self, out: int) -> int | None:
+        """Which copy an output line falls in; ``None`` if it falls outside.
+
+        ``0`` is the block that was already there, so a cell in it counts
+        as inside the region just as a cell in a copy does.
+        """
+        if out < self.lo or out > self.hi + self.added:
+            return None
+        return (out - self.lo) // self.size
+
+    def point(self, coord: int, *, at: int, absolute: bool) -> int:
+        """Where a reference to ``coord`` from a cell at ``at`` ends up.
+
+        Two things happen at once, as they do in Excel when you insert
+        copied cells. Room is made below the region, which moves anything
+        that was down there and stretches any range reaching over it. The
+        copies are then pasted in, and a relative reference in a copy
+        keeps the distance it had from the cell it was copied from.
+        """
+        moved = coord if coord <= self.hi else coord + self.added
+        if absolute:
+            return moved
+        copy = self.copy_of(at)
+        return moved if copy is None else moved + copy * self.size
+
+    def sources(self, last: int) -> list[int]:
+        """The line each output line copies, for lines ``1``..``last``."""
+        head = list(range(1, self.lo))
+        block = list(range(self.lo, self.hi + 1))
+        tail = list(range(self.hi + 1, last + 1))
+        return head + block * (self.copies + 1) + tail
+
+    def placements(self, coord: int) -> list[int]:
+        """Every output line a shape anchored at ``coord`` ends up on."""
+        if self.lo <= coord <= self.hi:
+            return [coord + k * self.size for k in range(self.copies + 1)]
+        return [self.point(coord, at=coord, absolute=True)]
+
+    def intervals(self, lo: int, hi: int) -> list[tuple[int, int]]:
+        """Every output interval the line interval ``lo``..``hi`` becomes."""
+        out: list[tuple[int, int]] = []
+        if lo < self.lo:
+            out.append((lo, min(hi, self.lo - 1)))
+        start, stop = max(lo, self.lo), min(hi, self.hi)
+        if start <= stop:
+            out.extend(
+                (start + k * self.size, stop + k * self.size)
+                for k in range(self.copies + 1)
+            )
+        if hi > self.hi:
+            out.append((max(lo, self.hi + 1) + self.added, hi + self.added))
+        return out
+
+
+class _Gap:
+    """A region of one axis that was removed."""
+
+    def __init__(self, lo: int, hi: int) -> None:
+        """Record that ``lo``..``hi`` is gone."""
+        self.lo = lo
+        self.hi = hi
+
+    @property
+    def size(self) -> int:
+        """How many lines were removed."""
+        return self.hi - self.lo + 1
+
+    def point(self, coord: int, *, end: bool) -> int:
+        """Where a reference to ``coord`` ends up.
+
+        A reference into the removed region collapses onto the edge it
+        came from, so a range that straddled it closes up.
+        """
+        if coord < self.lo:
+            return coord
+        if coord > self.hi:
+            return coord - self.size
+        return self.lo - 1 if end else self.lo
+
+    def sources(self, last: int) -> list[int]:
+        """The line each output line copies, for lines ``1``..``last``."""
+        return list(range(1, self.lo)) + list(range(self.hi + 1, last + 1))
+
+    def placements(self, coord: int) -> list[int]:
+        """Every output line a shape anchored at ``coord`` ends up on."""
+        if self.lo <= coord <= self.hi:
+            return []
+        return [self.point(coord, end=False)]
+
+    def intervals(self, lo: int, hi: int) -> list[tuple[int, int]]:
+        """Every output interval the line interval ``lo``..``hi`` becomes."""
+        out: list[tuple[int, int]] = []
+        if lo < self.lo:
+            out.append((lo, min(hi, self.lo - 1)))
+        if hi > self.hi:
+            out.append((max(lo, self.hi + 1) - self.size, hi - self.size))
+        return out
+
+
+type _Region = _Span | _Gap
+
+
+def duplicate_rows(
+    workbook: Workbook, worksheet: Worksheet, top: int, bottom: int, copies: int
+) -> list[tuple[int, int]]:
+    """Copy rows ``top``..``bottom`` and insert the copies below them."""
+    if copies <= 0:
+        return []
+    _apply(workbook, worksheet, _Span(top, bottom, copies), vertical=True)
+    size = bottom - top + 1
+    return [
+        (bottom + (k - 1) * size + 1, bottom + k * size) for k in range(1, copies + 1)
+    ]
+
+
+def duplicate_columns(
+    workbook: Workbook, worksheet: Worksheet, left: int, right: int, copies: int
+) -> list[tuple[int, int]]:
+    """Copy columns ``left``..``right`` and insert the copies to their right."""
+    if copies <= 0:
+        return []
+    _apply(workbook, worksheet, _Span(left, right, copies), vertical=False)
+    size = right - left + 1
+    return [
+        (right + (k - 1) * size + 1, right + k * size) for k in range(1, copies + 1)
+    ]
+
+
+def delete_rows(
+    workbook: Workbook, worksheet: Worksheet, top: int, bottom: int
+) -> None:
+    """Delete rows ``top``..``bottom``."""
+    _apply(workbook, worksheet, _Gap(top, bottom), vertical=True)
+
+
+def delete_columns(
+    workbook: Workbook, worksheet: Worksheet, left: int, right: int
+) -> None:
+    """Delete columns ``left``..``right``."""
+    _apply(workbook, worksheet, _Gap(left, right), vertical=False)
+
+
+# ------------------------------------------------------------------ driving
+
+
+def _sheet_data(worksheet: Worksheet) -> _Element:
+    element = worksheet._part.element
+    sheet_data = element.find(_SHEET_DATA)
+    if sheet_data is None:
+        message = "worksheet has no sheetData"
+        raise ValueError(message)
+    return sheet_data
+
+
+def _last_line(sheet_data: _Element, *, vertical: bool) -> int:
+    rows = sheet_data.findall(_ROW)
+    if vertical:
+        return max((int(r.get("r", "0")) for r in rows), default=0)
+    return max(
+        (cell_column(c) + 1 for r in rows for c in r.findall(_C)),
+        default=0,
+    )
+
+
+def _apply(
+    workbook: Workbook, worksheet: Worksheet, region: _Region, *, vertical: bool
+) -> None:
+    sheet_data = _sheet_data(worksheet)
+    last = _last_line(sheet_data, vertical=vertical)
+    sources = region.sources(max(last, region.hi))
+    if vertical:
+        copy_rows(sheet_data, sources, base=1)
+    else:
+        copy_columns(sheet_data, [c - 1 for c in sources], base=0)
+        _rebuild_cols(worksheet._part.element, region)
+
+    _follow(workbook, worksheet, region, vertical=vertical)
+    worksheet._invalidate_merge_map()
+    worksheet._invalidate_bulk_indexes()
+
+
+def _rebuild_cols(ws_element: _Element, region: _Region) -> None:
+    """Carry ``<cols>`` widths through the same region change."""
+    block = ws_element.find(_COLS)
+    if block is None:
+        return
+    pieces: list[tuple[int, int, _Element]] = []
+    for entry in list(block.findall(_COL)):
+        block.remove(entry)
+        lo = int(entry.get("min", "0"))
+        hi = int(entry.get("max", "0"))
+        pieces.extend(
+            (start, stop, entry)
+            for start, stop in region.intervals(lo, hi)
+            if start <= stop
+        )
+    for start, stop, entry in _joined(sorted(pieces, key=lambda piece: piece[0])):
+        moved = deepcopy(entry)
+        moved.set("min", str(start))
+        moved.set("max", str(stop))
+        block.append(moved)
+    if len(block) == 0:
+        ws_element.remove(block)
+
+
+def _joined(
+    pieces: list[tuple[int, int, _Element]],
+) -> list[tuple[int, int, _Element]]:
+    """Put back together runs that only split because they were copied."""
+    out: list[tuple[int, int, _Element]] = []
+    for start, stop, entry in pieces:
+        if out and out[-1][1] + 1 == start and _same(out[-1][2], entry):
+            out[-1] = (out[-1][0], stop, out[-1][2])
+            continue
+        out.append((start, stop, entry))
+    return out
+
+
+def _same(one: _Element, other: _Element) -> bool:
+    keep = ("min", "max")
+    return {k: v for k, v in one.attrib.items() if k not in keep} == {
+        k: v for k, v in other.attrib.items() if k not in keep
+    }
+
+
+def _endpoint(region: _Region, *, offset: int = 0) -> EndpointMapper:
+    """Map a range endpoint. ``offset`` bridges 0-based column indices."""
+
+    def mapper(coord: int, *, end: bool) -> int:
+        line = coord + offset
+        if isinstance(region, _Gap):
+            return region.point(line, end=end) - offset
+        return region.point(line, at=line, absolute=True) - offset
+
+    return mapper
+
+
+def _identity(coord: int, *, end: bool) -> int:  # noqa: ARG001
+    return coord
+
+
+def _point(region: _Region, *, at: int, offset: int = 0) -> PointMapper:
+    """Map a reference from a cell at ``at``, in the same coordinates."""
+
+    def mapper(coord: int, *, absolute: bool, end: bool) -> int:
+        line = coord + offset
+        if isinstance(region, _Gap):
+            return region.point(line, end=end) - offset
+        return region.point(line, at=at, absolute=absolute) - offset
+
+    return mapper
+
+
+def _identity_point(coord: int, *, absolute: bool, end: bool) -> int:  # noqa: ARG001
+    return coord
+
+
+def _follow(
+    workbook: Workbook, worksheet: Worksheet, region: _Region, *, vertical: bool
+) -> None:
+    element = worksheet._part.element
+    map_row = _endpoint(region) if vertical else _identity
+    map_col = _identity if vertical else _endpoint(region, offset=1)
+
+    refs = merged_refs(element)
+    sqrefs = [
+        (marked, marked.get("sqref", ""))
+        for marked in element.iter(_CONDITIONAL_FORMATTING, _DATA_VALIDATION)
+    ]
+    remap_sheet_references(element, map_row, map_col)
+    if refs:
+        set_merged_refs(
+            element,
+            [
+                ref
+                for old in refs
+                for ref in _range_copies(old, region, vertical=vertical)
+            ],
+        )
+    _copy_sqrefs(sqrefs, region, vertical=vertical)
+
+    for row_elm in _sheet_data(worksheet).findall(_ROW):
+        row_num = int(row_elm.get("r", "0"))
+        for c_elm in row_elm.findall(_C):
+            at = row_num if vertical else cell_column(c_elm) + 1
+            point = _point(region, at=at, offset=0 if vertical else 1)
+            rebase_formulas(
+                c_elm,
+                _identity_point if vertical else point,
+                point if vertical else _identity_point,
+            )
+
+    remap_tables(worksheet, lambda ref: remap_range_ref(ref, map_row, map_col))
+    remap_defined_names(
+        workbook._workbook_part.element,
+        {worksheet.name: (map_row, map_col)},
+    )
+    _follow_anchors(worksheet, region, vertical=vertical)
+
+
+def _copy_sqrefs(
+    marked: list[tuple[_Element, str]], region: _Region, *, vertical: bool
+) -> None:
+    """Give each conditional format and validation one range per copy.
+
+    What a merged block gets, and for the same reason: the region was
+    repeated, so what was laid over it is laid over every copy of it. A
+    range reaching past the region is only followed, and one that was
+    wholly inside a removed region goes with it.
+    """
+    for element, old in marked:
+        ranges = [
+            ref
+            for part in old.split()
+            for ref in _range_copies(part, region, vertical=vertical)
+        ]
+        if ranges:
+            element.set("sqref", " ".join(ranges))
+            continue
+        _drop(element)
+
+
+def _drop(element: _Element) -> None:
+    """Remove one element, and the ``dataValidations`` block it emptied."""
+    parent = element.getparent()
+    if parent is None:
+        return
+    parent.remove(element)
+    if parent.tag != _DATA_VALIDATIONS:
+        return
+    if len(parent):
+        parent.set("count", str(len(parent)))
+        return
+    block = parent.getparent()
+    if block is not None:
+        block.remove(parent)
+
+
+def _range_copies(ref: str, region: _Region, *, vertical: bool) -> list[str]:
+    """Every output range one range laid over the region becomes."""
+    from xlsxedit.merge import parse_range
+    from xlsxedit.oxml.address import index_to_col
+
+    c1, r1, c2, r2 = parse_range(ref)
+    lo, hi = (r1, r2) if vertical else (col_to_index(c1) + 1, col_to_index(c2) + 1)
+    if not (region.lo <= lo and hi <= region.hi):
+        return [remap_range_ref(ref, *_pair(region, vertical=vertical))]
+    starts = region.placements(lo)
+    ends = region.placements(hi)
+    out: list[str] = []
+    for start, end in zip(starts, ends, strict=False):
+        if vertical:
+            out.append(_range(c1, start, c2, end))
+        else:
+            out.append(_range(index_to_col(start - 1), r1, index_to_col(end - 1), r2))
+    return out
+
+
+def _range(c1: str, r1: int, c2: str, r2: int) -> str:
+    first = f"{c1}{r1}"
+    second = f"{c2}{r2}"
+    return first if first == second else f"{first}:{second}"
+
+
+def _pair(region: _Region, *, vertical: bool) -> tuple[EndpointMapper, EndpointMapper]:
+    if vertical:
+        return (_endpoint(region), _identity)
+    return (_identity, _endpoint(region, offset=1))
+
+
+def _follow_anchors(worksheet: Worksheet, region: _Region, *, vertical: bool) -> None:
+    from xlsxedit.drawing import drawing_parts_for_worksheet
+
+    def placements(row: int, col: int) -> list[tuple[int, int]]:
+        if vertical:
+            return [(line, col) for line in region.placements(row)]
+        return [(row, line - 1) for line in region.placements(col + 1)]
+
+    for part in drawing_parts_for_worksheet(worksheet):
+        expand_anchors(part, placements)

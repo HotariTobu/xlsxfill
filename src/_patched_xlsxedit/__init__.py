@@ -1,79 +1,61 @@
-"""Externally patched xlsxedit.
+"""What xlsxedit does not do yet, written the way xlsxedit would do it.
 
-xlsxedit re-serializes XML parts through lxml on save, which does not
-round-trip authored XML byte-for-byte. xlsxfill's output contract is
-byte-exact, so this package patches xlsxedit from the outside with
-byte-preserving counterparts of its APIs:
+Every name here takes and returns xlsxedit's own things — a ``Workbook``,
+a ``Worksheet``, a ``Cell`` — and fills a gap upstream leaves open:
 
-- [`Package`][_patched_xlsxedit.Package] keeps every part as raw bytes
-  (vs. ``xlsxedit.opc.package.OpcPackage``).
-- [`Relationships`][_patched_xlsxedit._rels.Relationships] and
-  [`ContentTypes`][_patched_xlsxedit._content_types.ContentTypes] splice
-  bookkeeping edits into the raw text (vs. ``xlsxedit.opc.rel``).
-- [`Workbook`][_patched_xlsxedit.Workbook] carries the worksheet-part
-  structure operations behind upstream's ``copy_worksheet`` /
-  ``remove_worksheet`` / ``rename_worksheet``, pictures behind
-  ``add_image``, and [`SharedStringTable`][_patched_xlsxedit.SharedStringTable]
-  (vs. ``xlsxedit.shared_strings``).
-- The remap module generalizes ``xlsxedit.row_shift`` from uniform shifts
-  to arbitrary endpoint mappings.
+- **Duplicating and deleting rows and columns.** ``insert_rows`` writes
+  new data and pushes the rest down; it never copies cell content, and
+  ``insert_columns`` says outright that it rewrites neither formula text
+  nor drawing anchors.
+- **Following references through it.** ``row_shift`` follows a uniform
+  shift, and nothing follows formula text or drawing anchors at all.
+- **Text outside cells.** ``Workbook.replace`` reaches cells only; tab
+  names, headers, comments, shapes, charts, validation messages,
+  tooltips and document properties are out of reach.
+- **Writing values in bulk.** ``Cell.value`` never reuses a shared
+  string, edits entries other cells may share, and costs a full-workbook
+  scan per write.
+- **Saying how many cells the shared strings serve.** ``sst/@count`` is
+  a count of references, and the only thing that maintains it counts
+  table entries instead, so it is wrong the moment two cells share a
+  string or a cell is cleared.
+- **Copying a sheet to a chosen position.** ``copy_worksheet`` landed
+  upstream after 1.0.1 and always appends.
+- **Pictures from bytes at a chosen size.** ``add_image`` takes a path
+  and picks the size itself.
 
-Each patched API is written as a preview of xlsxedit's own direction so
-its use case can be proposed upstream as-is. xlsxedit itself is never
-imported by xlsxfill; everything goes through this package.
+Each of these is a candidate upstream request, so each can be deleted
+here the day upstream has it.
 """
 
-from xlsxedit.merge import parse_range
-from xlsxedit.oxml.address import col_to_index, index_to_col, split_address
-
-from _patched_xlsxedit._drawing import PicturePlacement
-from _patched_xlsxedit._package import Package
-from _patched_xlsxedit._remap import (
-    EndpointMapper,
-    PointMapper,
-    expand_anchors,
-    rebase_formula,
-    remap_defined_name,
-    remap_range_ref,
-    remap_sqref,
-    remap_table,
+from _patched_xlsxedit._copy_worksheet import copy_worksheet, move_worksheet
+from _patched_xlsxedit._duplicate import (
+    delete_columns,
+    delete_rows,
+    duplicate_columns,
+    duplicate_rows,
 )
-from _patched_xlsxedit._shared_strings import SharedStringTable
-from _patched_xlsxedit._workbook import RT, Workbook
-from _patched_xlsxedit._worksheet import add_hyperlinks, insert_worksheet_child
-from _patched_xlsxedit._xmltext import (
-    emit_attrs,
-    escape_attr,
-    escape_go_text,
-    escape_text,
-    parse_attrs,
-    unescape,
-)
+from _patched_xlsxedit._image import add_picture, read_size
+from _patched_xlsxedit._link import add_link
+from _patched_xlsxedit._tables import refresh_table_columns
+from _patched_xlsxedit._text import TextRef, book_texts, sheet_texts
+from _patched_xlsxedit._write import Writer, refresh_shared_string_count, serial
 
 __all__ = [
-    "RT",
-    "EndpointMapper",
-    "Package",
-    "PicturePlacement",
-    "PointMapper",
-    "SharedStringTable",
-    "Workbook",
-    "add_hyperlinks",
-    "col_to_index",
-    "emit_attrs",
-    "escape_attr",
-    "escape_go_text",
-    "escape_text",
-    "expand_anchors",
-    "index_to_col",
-    "insert_worksheet_child",
-    "parse_attrs",
-    "parse_range",
-    "rebase_formula",
-    "remap_defined_name",
-    "remap_range_ref",
-    "remap_sqref",
-    "remap_table",
-    "split_address",
-    "unescape",
+    "TextRef",
+    "Writer",
+    "add_link",
+    "add_picture",
+    "book_texts",
+    "copy_worksheet",
+    "delete_columns",
+    "delete_rows",
+    "duplicate_columns",
+    "duplicate_rows",
+    "move_worksheet",
+    "read_size",
+    "refresh_shared_string_count",
+    "refresh_table_columns",
+    "serial",
+    "sheet_texts",
 ]

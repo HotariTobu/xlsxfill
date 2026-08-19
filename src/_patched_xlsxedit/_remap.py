@@ -3,23 +3,51 @@
 ``xlsxedit.row_shift`` follows references (ranges, sqrefs, defined names,
 table parts) through a uniform "insert n at row r" shift. These are the
 same followers generalized to arbitrary endpoint mappings — a uniform
-shift is the special case — plus formula rebasing, drawing-anchor
-duplication, and sheet renames in formulas. The generalization is a
-candidate upstream request.
+shift is the special case — plus the followers upstream does not have at
+all: formula text and drawing anchors. The generalization is a candidate
+upstream request.
+
+Everything here works on the lxml elements xlsxedit already exposes.
 """
 
 from __future__ import annotations
 
 import re
+from copy import deepcopy
 from typing import TYPE_CHECKING, Protocol
 
 from xlsxedit.merge import parse_range
 from xlsxedit.oxml.address import col_to_index, index_to_col
 
-from _patched_xlsxedit._xmltext import escape_attr, escape_go_text, unescape
-
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Callable, Iterable, Mapping
+
+    from lxml.etree import _Element
+    from xlsxedit.opc.part import Part
+    from xlsxedit.workbook import Workbook
+
+SML_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+XDR_NS = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
+
+_F = f"{{{SML_NS}}}f"
+_MERGE_CELLS = f"{{{SML_NS}}}mergeCells"
+_MERGE_CELL = f"{{{SML_NS}}}mergeCell"
+_CONDITIONAL_FORMATTING = f"{{{SML_NS}}}conditionalFormatting"
+_DATA_VALIDATION = f"{{{SML_NS}}}dataValidation"
+_HYPERLINK = f"{{{SML_NS}}}hyperlink"
+_AUTO_FILTER = f"{{{SML_NS}}}autoFilter"
+_TABLE_COLUMNS = f"{{{SML_NS}}}tableColumns"
+_TABLE_COLUMN = f"{{{SML_NS}}}tableColumn"
+_DEFINED_NAMES = f"{{{SML_NS}}}definedNames"
+_DEFINED_NAME = f"{{{SML_NS}}}definedName"
+
+_TWO_CELL = f"{{{XDR_NS}}}twoCellAnchor"
+_ONE_CELL = f"{{{XDR_NS}}}oneCellAnchor"
+_FROM = f"{{{XDR_NS}}}from"
+_TO = f"{{{XDR_NS}}}to"
+_COL = f"{{{XDR_NS}}}col"
+_ROW = f"{{{XDR_NS}}}row"
+_CNVPR = f"{{{XDR_NS}}}cNvPr"
 
 
 class PointMapper(Protocol):
@@ -69,6 +97,61 @@ def remap_sqref(sqref: str, map_row: EndpointMapper, map_col: EndpointMapper) ->
     return " ".join(remap_range_ref(part, map_row, map_col) for part in sqref.split())
 
 
+def remap_sheet_references(
+    ws_element: _Element,
+    map_row: EndpointMapper,
+    map_col: EndpointMapper,
+) -> None:
+    """Follow merge, CF, hyperlink, and dataValidation refs, in place.
+
+    The arbitrary-mapping counterpart of
+    ``xlsxedit.row_shift.shift_sheet_row_references``. Merged ranges are
+    remapped one-to-one here; duplicating them per copy is the caller's,
+    which upstream's uniform shift never has to do.
+    """
+    block = ws_element.find(_MERGE_CELLS)
+    if block is not None:
+        for merge in block.findall(_MERGE_CELL):
+            ref = merge.get("ref")
+            if ref:
+                merge.set("ref", remap_range_ref(ref, map_row, map_col))
+    for element in ws_element.iter(_CONDITIONAL_FORMATTING, _DATA_VALIDATION):
+        sqref = element.get("sqref")
+        if sqref:
+            element.set("sqref", remap_sqref(sqref, map_row, map_col))
+    for element in ws_element.iter(_HYPERLINK, _AUTO_FILTER):
+        ref = element.get("ref")
+        if ref:
+            element.set("ref", remap_range_ref(ref, map_row, map_col))
+
+
+def set_merged_refs(ws_element: _Element, refs: list[str]) -> None:
+    """Replace the ``<mergeCells>`` block with ``refs``."""
+    block = ws_element.find(_MERGE_CELLS)
+    if block is None:
+        return
+    if not refs:
+        ws_element.remove(block)
+        return
+    for child in list(block):
+        block.remove(child)
+    for ref in refs:
+        block.makeelement(_MERGE_CELL, {})
+        merge = block.makeelement(_MERGE_CELL, {"ref": ref})
+        block.append(merge)
+    block.set("count", str(len(refs)))
+
+
+def merged_refs(ws_element: _Element) -> list[str]:
+    """The ``ref`` of every ``<mergeCell>`` on a worksheet."""
+    block = ws_element.find(_MERGE_CELLS)
+    if block is None:
+        return []
+    return [m.get("ref", "") for m in block.findall(_MERGE_CELL) if m.get("ref")]
+
+
+# ------------------------------------------------------------ defined names
+
 _DEFINED_NAME_REF_RE = re.compile(
     r"('(?:[^']|'')+'|[A-Za-z0-9_.]+)!"
     r"(\$?[A-Za-z]{1,3}\$?\d+(?::\$?[A-Za-z]{1,3}\$?\d+)?)",
@@ -98,6 +181,25 @@ def remap_defined_name(
     return _DEFINED_NAME_REF_RE.sub(_sub, text)
 
 
+def remap_defined_names(
+    workbook_element: _Element,
+    mappers_for_sheet: Mapping[str, tuple[EndpointMapper, EndpointMapper]],
+) -> None:
+    """Follow every ``<definedName>`` through the mappings, in place.
+
+    The arbitrary-mapping counterpart of
+    ``xlsxedit.row_shift.shift_defined_names``.
+    """
+    block = workbook_element.find(_DEFINED_NAMES)
+    if block is None:
+        return
+    for element in block.findall(_DEFINED_NAME):
+        text = element.text
+        if not text:
+            continue
+        element.text = remap_defined_name(text, mappers_for_sheet)
+
+
 # -------------------------------------------------------- formula rebasing
 
 _REF_RE = re.compile(
@@ -120,22 +222,17 @@ _BOUNDARY_AFTER = set(
 def rebase_formula(text: str, map_col: PointMapper, map_row: PointMapper) -> str:
     """Rewrite the cell references of one formula.
 
-    Double-quoted strings and sheet-qualified references are left as they
-    are; every bare A1-style reference or range is mapped through
-    ``map_col`` / ``map_row``.
+    xlsxedit never rewrites formula text — ``insert_rows`` shifts
+    structural references only, and ``insert_columns`` documents the
+    omission. Double-quoted strings and sheet-qualified references are
+    left as they are; every bare A1-style reference or range is mapped.
     """
     out: list[str] = []
     pos = 0
     while pos < len(text):
         char = text[pos]
-        if char == '"':
-            end = text.find('"', pos + 1)
-            end = len(text) - 1 if end == -1 else end
-            out.append(text[pos : end + 1])
-            pos = end + 1
-            continue
-        if char == "'":
-            end = text.find("'", pos + 1)
+        if char in ('"', "'"):
+            end = text.find(char, pos + 1)
             end = len(text) - 1 if end == -1 else end
             out.append(text[pos : end + 1])
             pos = end + 1
@@ -148,6 +245,19 @@ def rebase_formula(text: str, map_col: PointMapper, map_row: PointMapper) -> str
         out.append(char)
         pos += 1
     return "".join(out)
+
+
+def rebase_formulas(
+    row_element: _Element,
+    map_col: PointMapper,
+    map_row: PointMapper,
+) -> None:
+    """Rebase every ``<f>`` under one row element, in place."""
+    for f_elm in row_element.iter(_F):
+        text = f_elm.text
+        if not text:
+            continue
+        f_elm.text = rebase_formula(text, map_col, map_row)
 
 
 def _is_bare(text: str, m: re.Match[str]) -> bool:
@@ -200,137 +310,123 @@ def _map_single(
 
 
 def remap_table(
-    raw: str,
+    table_element: _Element,
     map_range: Callable[[str], str],
     header_text: Callable[[int, int], str],
-) -> str | None:
-    """Follow a table part through a range mapping.
+) -> None:
+    """Follow one table part through a range mapping, in place.
 
-    The table and auto-filter refs go through ``map_range``; the columns
-    are rebuilt from ``header_text(row, col)`` over the new header row.
-    Returns ``None`` when the part has no table ref to follow.
+    The arbitrary-mapping counterpart of
+    ``xlsxedit.row_shift.shift_table_parts``; the column names are
+    rebuilt from ``header_text(row, col)`` over the new header row, which
+    a uniform shift never needs.
     """
-    table_tag = re.search(r'(<table [^>]*?ref=")([^"]*)(")', raw)
-    if table_tag is None:
-        return None
-    new_ref = map_range(table_tag.group(2))
-    raw = raw.replace(
-        table_tag.group(0),
-        f"{table_tag.group(1)}{new_ref}{table_tag.group(3)}",
-        1,
-    )
-    raw = re.sub(
-        r'(<autoFilter ref=")([^"]*)(")',
-        lambda m: f"{m.group(1)}{map_range(m.group(2))}{m.group(3)}",
-        raw,
-        count=1,
-    )
+    ref = table_element.get("ref")
+    if not ref:
+        return
+    new_ref = map_range(ref)
+    table_element.set("ref", new_ref)
+    auto = table_element.find(_AUTO_FILTER)
+    if auto is not None and auto.get("ref"):
+        auto.set("ref", map_range(auto.get("ref", "")))
+    columns = table_element.find(_TABLE_COLUMNS)
+    if columns is None:
+        return
     c1, r1, c2, _ = parse_range(new_ref)
     names = [
         header_text(r1, col) for col in range(col_to_index(c1), col_to_index(c2) + 1)
     ]
-    columns = "".join(
-        f'<tableColumn id="{i}" name="{escape_attr(name)}"></tableColumn>'
-        for i, name in enumerate(names, start=1)
-    )
-    return re.sub(
-        r'<tableColumns count="\d+">.*?</tableColumns>',
-        f'<tableColumns count="{len(names)}">{columns}</tableColumns>',
-        raw,
-        count=1,
-        flags=re.DOTALL,
-    )
+    for child in list(columns):
+        columns.remove(child)
+    columns.set("count", str(len(names)))
+    for i, name in enumerate(names, start=1):
+        column = columns.makeelement(_TABLE_COLUMN, {"id": str(i), "name": name})
+        columns.append(column)
 
 
 # --------------------------------------------------------- drawing anchors
 
-_ANCHOR_RE = re.compile(
-    r"<xdr:(twoCellAnchor|oneCellAnchor)((?:\s[^>]*)?)>.*?</xdr:\1>",
-    re.DOTALL,
-)
-_CNVPR_RE = re.compile(r'(<xdr:cNvPr id=")(\d+)(" name=")([^"]*)(")')
-_FROM_TO_RE = re.compile(
-    r"(<xdr:(?:from|to)>)(.*?)(</xdr:(?:from|to)>)",
-    re.DOTALL,
-)
 
-
-def _shift_anchor(block: str, delta_row: int, delta_col: int) -> str:
-    if delta_row == 0 and delta_col == 0:
-        return block
-
-    def _shift(m: re.Match[str]) -> str:
-        inner = m.group(2)
-        inner = re.sub(
-            r"(<xdr:col>)(\d+)(</xdr:col>)",
-            lambda c: f"{c.group(1)}{int(c.group(2)) + delta_col}{c.group(3)}",
-            inner,
-        )
-        inner = re.sub(
-            r"(<xdr:row>)(\d+)(</xdr:row>)",
-            lambda c: f"{c.group(1)}{int(c.group(2)) + delta_row}{c.group(3)}",
-            inner,
-        )
-        return f"{m.group(1)}{inner}{m.group(3)}"
-
-    return _FROM_TO_RE.sub(_shift, block)
-
-
-def _renumber_anchor(block: str, new_id: int) -> str:
-    def _sub(m: re.Match[str]) -> str:
-        name = re.sub(r"\d+$", str(new_id), m.group(4))
-        return f"{m.group(1)}{new_id}{m.group(3)}{name}{m.group(5)}"
-
-    return _CNVPR_RE.sub(_sub, block, count=1)
+_TWO_CELL = f"{{{XDR_NS}}}twoCellAnchor"
+_ONE_CELL = f"{{{XDR_NS}}}oneCellAnchor"
+_FROM = f"{{{XDR_NS}}}from"
+_TO = f"{{{XDR_NS}}}to"
+_XDR_COL = f"{{{XDR_NS}}}col"
+_XDR_ROW = f"{{{XDR_NS}}}row"
+_CNVPR = f"{{{XDR_NS}}}cNvPr"
 
 
 def expand_anchors(
-    raw: str,
-    placements: Callable[[int, int], list[tuple[int, int]]],
-) -> str:
+    part: Part, placements: Callable[[int, int], list[tuple[int, int]]]
+) -> None:
     """Duplicate cell-anchored shapes to their mapped placements.
 
-    ``placements(row, col)`` receives a shape's 1-based anchor row and
-    0-based anchor column and returns the output ``(row, col)`` positions
-    in duplication order; an empty list drops the shape. Anchors with
-    ``editAs="absolute"`` are left untouched.
+    xlsxedit's ``insert_rows`` documents that it does not move drawing
+    anchors; this follows them. ``placements(row, col)`` receives a
+    shape's 1-based anchor row and 0-based anchor column and returns the
+    output positions in duplication order; an empty list drops the shape.
+    Anchors with ``editAs="absolute"`` are left where they are.
     """
-    max_id = max(
-        (int(n) for _, n, *_ in (m.groups() for m in _CNVPR_RE.finditer(raw))),
-        default=0,
-    )
-    out: list[str] = []
-    last_end = 0
-    next_id = max_id + 1
-    for m in _ANCHOR_RE.finditer(raw):
-        out.append(raw[last_end : m.start()])
-        last_end = m.end()
-        block = m.group(0)
-        if 'editAs="absolute"' in m.group(2):
-            out.append(block)
+    from xlsxedit.oxml.parser import parse_xml, serialize_xml
+
+    root = parse_xml(part.blob)
+    changed = False
+    for anchor in list(root):
+        if anchor.tag not in (_TWO_CELL, _ONE_CELL):
             continue
-        from_m = re.search(
-            r"<xdr:from><xdr:col>(\d+)</xdr:col>.*?<xdr:row>(\d+)</xdr:row>",
-            block,
-            re.DOTALL,
-        )
-        if from_m is None:
-            out.append(block)
+        if anchor.get("editAs") == "absolute":
             continue
-        from_col = int(from_m.group(1))
-        from_row = int(from_m.group(2)) + 1
-        targets = placements(from_row, from_col)
+        corner = anchor.find(_FROM)
+        if corner is None:
+            continue
+        column = int(corner.findtext(_XDR_COL, "0") or "0")
+        row = int(corner.findtext(_XDR_ROW, "0") or "0") + 1
+        targets = placements(row, column)
+        if targets == [(row, column)]:
+            continue
+        changed = True
+        index = list(root).index(anchor)
         if not targets:
+            root.remove(anchor)
             continue
-        for index, (new_row, new_col) in enumerate(targets):
-            shifted = _shift_anchor(block, new_row - from_row, new_col - from_col)
-            if index == 0:
-                out.append(shifted)
-            else:
-                out.append(_renumber_anchor(shifted, next_id))
-                next_id += 1
-    out.append(raw[last_end:])
-    return "".join(out)
+        _shift_anchor(anchor, targets[0][0] - row, targets[0][1] - column)
+        for offset, (target_row, target_column) in enumerate(targets[1:], start=1):
+            copy = deepcopy(anchor)
+            _shift_anchor(
+                copy, target_row - targets[0][0], target_column - targets[0][1]
+            )
+            root.insert(index + offset, copy)
+    if changed:
+        _renumber(root)
+        part._blob = serialize_xml(root)
+
+
+def _shift_anchor(anchor: _Element, rows: int, columns: int) -> None:
+    if rows == 0 and columns == 0:
+        return
+    for corner in (anchor.find(_FROM), anchor.find(_TO)):
+        if corner is None:
+            continue
+        column = corner.find(_XDR_COL)
+        if column is not None:
+            column.text = str(int(column.text or "0") + columns)
+        row = corner.find(_XDR_ROW)
+        if row is not None:
+            row.text = str(int(row.text or "0") + rows)
+
+
+def _renumber(root: _Element) -> None:
+    """Number the shapes the way they now read, top to bottom."""
+    names = list(root.iter(_CNVPR))
+    if not names:
+        return
+    first = min(int(name.get("id", "0")) for name in names)
+    for offset, name in enumerate(names):
+        new_id = first + offset
+        name.set("id", str(new_id))
+        label = name.get("name")
+        if label:
+            name.set("name", re.sub(r"\d+$", str(new_id), label))
 
 
 # --------------------------------------------------- sheet renames (formulas)
@@ -344,7 +440,7 @@ def quote_sheet_name(name: str) -> str:
 
 
 def sheet_prefix_patterns(old: str) -> list[str]:
-    """The formula prefixes (decoded) that reference sheet ``old``."""
+    """The formula prefixes that reference sheet ``old``."""
     patterns = [f"'{old.replace(chr(39), chr(39) * 2)}'!"]
     if quote_sheet_name(old) == old:
         patterns.append(f"{old}!")
@@ -352,7 +448,7 @@ def sheet_prefix_patterns(old: str) -> list[str]:
 
 
 def rename_in_formula_text(text: str, renames: list[tuple[str, str]]) -> str:
-    """Apply sheet renames to one decoded formula string."""
+    """Apply sheet renames to one formula string."""
     for old, new in renames:
         if old == new:
             continue
@@ -362,17 +458,58 @@ def rename_in_formula_text(text: str, renames: list[tuple[str, str]]) -> str:
     return text
 
 
-_F_NODE_RE = re.compile(r"(<f(?:\s[^>]*)?>)(.*?)(</f>)", re.DOTALL)
+def rename_sheets_in_formulas(
+    elements: Iterable[_Element],
+    renames: list[tuple[str, str]],
+) -> None:
+    """Apply sheet renames to every ``<f>`` under ``elements``, in place.
+
+    The formula-following extension of
+    ``xlsxedit.Workbook.rename_worksheet``, which renames the sheet only.
+    """
+    pairs = [(old, new) for old, new in renames if old != new]
+    if not pairs:
+        return
+    for element in elements:
+        for f_elm in element.iter(_F):
+            text = f_elm.text
+            if not text:
+                continue
+            f_elm.text = rename_in_formula_text(text, pairs)
 
 
-def rename_sheets_in_formulas(raw: str, renames: list[tuple[str, str]]) -> str:
-    """Apply sheet renames to every ``<f>`` node of one part's raw text."""
+def rename_sheets_in_charts(workbook: Workbook, renames: list[tuple[str, str]]) -> None:
+    """Apply sheet renames to the series formulas of every chart.
 
-    def _sub(m: re.Match[str]) -> str:
-        text = unescape(m.group(2))
-        renamed = rename_in_formula_text(text, renames)
-        if renamed == text:
-            return m.group(0)
-        return f"{m.group(1)}{escape_go_text(renamed)}{m.group(3)}"
+    A chart names the sheet its data comes from, so renaming a sheet and
+    leaving the chart alone points it at a sheet that is no longer there.
+    ``Workbook.rename_worksheet`` renames the tab and stops.
+    """
+    pairs = [(old, new) for old, new in renames if old != new]
+    if not pairs:
+        return
+    from xlsxedit.drawing import drawing_parts_for_worksheet
+    from xlsxedit.oxml.parser import parse_xml, serialize_xml
 
-    return _F_NODE_RE.sub(_sub, raw)
+    chart_rel = (
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart"
+    )
+    chart_formula = "{http://schemas.openxmlformats.org/drawingml/2006/chart}f"
+    for worksheet in workbook.worksheets:
+        for drawing in drawing_parts_for_worksheet(worksheet):
+            for rel in drawing.rels:
+                if rel.is_external or rel.reltype != chart_rel:
+                    continue
+                part = rel.target_part
+                root = parse_xml(part.blob)
+                touched = False
+                for element in root.iter(chart_formula):
+                    text = element.text
+                    if not text:
+                        continue
+                    renamed = rename_in_formula_text(text, pairs)
+                    if renamed != text:
+                        element.text = renamed
+                        touched = True
+                if touched:
+                    part._blob = serialize_xml(root)
