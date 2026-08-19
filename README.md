@@ -36,7 +36,7 @@ fill(
 | 1 | Acme Inc. |
 
 The placeholder syntax is documented in
-[SYNTAX.md](https://github.com/HotariTobu/xlsxfill/blob/main/SYNTAX.md).
+[Syntax](https://hotaritobu.github.io/xlsxfill/latest/syntax/).
 
 ## Acknowledgments
 
