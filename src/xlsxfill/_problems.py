@@ -18,7 +18,7 @@ class BaseProblem:
 
         ``#SYNTAX! <construct>: <reason>`` or ``#DATA! <construct>: <reason>``.
         """
-        raise NotImplementedError
+        return f"#{self.kind.upper()}! {self.construct}: {self.reason}"
 
 
 @dataclass(frozen=True)
