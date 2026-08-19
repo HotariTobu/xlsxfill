@@ -197,6 +197,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="." class="md-nav__link md-nav__link--active">
         
   
@@ -213,6 +231,69 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-the-output-is-produced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the output is produced
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filling-a-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filling a template
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -292,6 +373,58 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-the-output-is-produced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the output is produced
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filling-a-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filling a template
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -312,10 +445,110 @@
 
 <h1 id="xlsxfill">xlsxfill</h1>
 <p>Generate an xlsx by merging a template xlsx with data.</p>
-<ul>
-<li><a href="syntax/">Syntax</a></li>
-<li><a href="api/">API</a></li>
-</ul>
+<h2 id="install">Install</h2>
+<pre><code class="language-bash">pip install xlsxfill
+</code></pre>
+<p>Python 3.12 or later.</p>
+<h2 id="how-the-output-is-produced">How the output is produced</h2>
+<p>xlsxfill does not rebuild the workbook from a model of its own. It opens the
+template with <a href="https://github.com/jonas-kupferschmid/xlsxedit">xlsxedit</a>, edits
+the parts the placeholders touch, and writes the package back out. The elements
+of the original template are not destroyed along the way.</p>
+<h2 id="filling-a-template">Filling a template</h2>
+<p>Given <code>template.xlsx</code>, whose first sheet looks like this:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+<th>D</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>${customer.name}</code></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>#{r}${items#r.name}</code></td>
+<td><code>${items#r.qty:num}</code></td>
+<td><code>${items#r.price:num}</code></td>
+<td><code>=B2*C2</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>#{r+1}</code></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-python">from xlsxfill import fill
+
+fill(
+    &quot;template.xlsx&quot;,
+    {
+        &quot;customer&quot;: {&quot;name&quot;: &quot;Acme Inc.&quot;},
+        &quot;items&quot;: [
+            {&quot;name&quot;: &quot;Widget&quot;, &quot;qty&quot;: 3, &quot;price&quot;: 1200},
+            {&quot;name&quot;: &quot;Gadget&quot;, &quot;qty&quot;: 1, &quot;price&quot;: 4800},
+        ],
+    },
+    &quot;output.xlsx&quot;,
+)
+</code></pre>
+<p><code>output.xlsx</code>:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+<th>D</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Acme Inc.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Widget</td>
+<td>3</td>
+<td>1200</td>
+<td><code>=B2*C2</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Gadget</td>
+<td>1</td>
+<td>4800</td>
+<td><code>=B3*C3</code></td>
+</tr>
+</tbody>
+</table>
+<p>Row 2 is duplicated once per item, the row holding <code>#{r+1}</code> is removed, and the
+formula is rebased for each copy.</p>
+<p>The notation itself is documented in <a href="syntax/">Syntax</a>.</p>
+<h2 id="errors">Errors</h2>
+<p>Failures split in two. <code>DataError</code> is raised when the input data as a whole is
+unusable, and nothing is written. A bad placeholder or a bad value does not stop
+the run: the offending construct is replaced with a message, and <code>fill</code> returns
+one <code>Problem</code> per message.</p>
+<p>Which constructs and values fall on which side is listed in
+<a href="syntax/#errors">Syntax</a>; the types are described in <a href="api/">API</a>.</p>
 
 
 
