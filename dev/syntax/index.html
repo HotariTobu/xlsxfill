@@ -1,0 +1,1511 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Generate an xlsx by merging a template xlsx with data.">
+      
+      
+      
+        <link rel="canonical" href="https://hotaritobu.github.io/xlsxfill/dev/syntax/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../api/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Syntax - xlsxfill</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#xlsxfill-placeholder-syntax" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="xlsxfill" class="md-header__button md-logo" aria-label="xlsxfill" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            xlsxfill
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Syntax
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/HotariTobu/xlsxfill" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    HotariTobu/xlsxfill
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="xlsxfill" class="md-nav__button md-logo" aria-label="xlsxfill" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    xlsxfill
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/HotariTobu/xlsxfill" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    HotariTobu/xlsxfill
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Syntax
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Syntax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Notation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#repetition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repetition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#value-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Value references
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-assertions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type assertions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#links-and-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Links and images
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#line-items-vertical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Line items (vertical)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#temperature-table-2d" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Temperature table (2D)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#departments-staff-nesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Departments → staff (nesting)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#staff-laid-out-horizontally-per-department-horizontal-inside-vertical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Staff laid out horizontally per department (horizontal inside vertical)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tasks-growing-vertically-per-employee-vertical-inside-horizontal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tasks growing vertically per employee (vertical inside horizontal)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sheets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sheets
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-placeholders-can-be-written" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where placeholders can be written
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#behavior-during-expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behavior during expansion
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Behavior during expansion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sheets_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sheets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Values
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reported-in-the-output-processing-continues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reported in the output (processing continues)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#raised-processing-stops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raised (processing stops)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Notation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#repetition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repetition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#value-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Value references
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-assertions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type assertions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#links-and-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Links and images
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#line-items-vertical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Line items (vertical)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#temperature-table-2d" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Temperature table (2D)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#departments-staff-nesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Departments → staff (nesting)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#staff-laid-out-horizontally-per-department-horizontal-inside-vertical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Staff laid out horizontally per department (horizontal inside vertical)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tasks-growing-vertically-per-employee-vertical-inside-horizontal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tasks growing vertically per employee (vertical inside horizontal)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sheets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sheets
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-placeholders-can-be-written" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where placeholders can be written
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#behavior-during-expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behavior during expansion
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Behavior during expansion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sheets_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sheets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Values
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reported-in-the-output-processing-continues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reported in the output (processing continues)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#raised-processing-stops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raised (processing stops)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="xlsxfill-placeholder-syntax">xlsxfill Placeholder Syntax</h1>
+<p>Generate an xlsx by merging a template xlsx with data.</p>
+<h2 id="principles">Principles</h2>
+<p><strong>Do not bring features Excel already has into the template language.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Goal</th>
+<th>Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Arithmetic</td>
+<td>Excel formulas <code>=B1*C1</code></td>
+</tr>
+<tr>
+<td>Formatting (dates, currency, thousands separators)</td>
+<td>Cell number formats</td>
+</tr>
+<tr>
+<td>Conditionals</td>
+<td><code>=IF()</code>, conditional formatting, filter on the data side</td>
+</tr>
+<tr>
+<td>Growing aggregation ranges</td>
+<td>Mixed references <code>=SUM(D$1:D1)</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>The data's type decides everything. No conversion.</strong></p>
+<p>Type specifiers are assertions (validation), not conversions.</p>
+<p><strong>Writable by an ordinary Excel user.</strong></p>
+<p>Everything is expressed with strings that can be typed through the Excel UI.</p>
+<hr />
+<h2 id="notation">Notation</h2>
+<h3 id="repetition">Repetition</h3>
+<pre><code>#{rDept}              start position of the band
+#{rDept+1}            start position of the next band
+</code></pre>
+<p><code>+1</code> is not an end marker. It indicates <strong>where the second iteration starts</strong>. The distance between the start position and the <code>+1</code> position is the band's height (or width). Just like Excel's autofill: placing the first and second determines the period.</p>
+<p>The prefix determines the direction.</p>
+<table>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>Meaning</th>
+<th>What it looks at</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>r</code></td>
+<td>Vertical (row direction)</td>
+<td>The <strong>row</strong> of the cell it is placed in</td>
+</tr>
+<tr>
+<td><code>c</code></td>
+<td>Horizontal (column direction)</td>
+<td>The <strong>column</strong> of the cell it is placed in</td>
+</tr>
+</tbody>
+</table>
+<p><code>r</code> only looks at the row, so the column is arbitrary. <code>c</code> only looks at the column, so the row is arbitrary.</p>
+<p>Anything may follow <code>r</code> / <code>c</code>, including Japanese.</p>
+<pre><code>#{r}        #{rDept}        #{rStaff}        #{r部署}
+#{c}        #{cEmp}
+</code></pre>
+<p>Sheet repetition has no declaration (→ Examples &gt; Sheets).</p>
+<p>A start marker may share a cell with other content.</p>
+<pre><code>#{rDept}${departments#rDept.name}
+</code></pre>
+<p>Vertical and horizontal start markers may be written in the same cell.</p>
+<pre><code>#{r}#{c}${temperatures#r#c}
+</code></pre>
+<p>Whitespace is allowed.</p>
+<pre><code>#{ rDept }        #{ rDept + 1 }
+</code></pre>
+<h3 id="value-references">Value references</h3>
+<pre><code>${customer.name}                          scalar
+${departments#rDept.name}                 current element of a band
+${departments#rDept.staff#rStaff.name}    nesting
+${temperatures#r#c}                       2D intersection
+${items#2}                                fixed index
+${#rStaff}                                index value
+${sheets#s.name}                          sheet
+</code></pre>
+<p>After <code>#</code>, <strong>a name means a variable, a number means a fixed index</strong>.</p>
+<p>Square brackets are not used, because <code>[</code> is not allowed in sheet names.</p>
+<p>Whitespace is allowed.</p>
+<pre><code>${ customer . name }
+</code></pre>
+<h3 id="index">Index</h3>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Base</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>${items#2}</code> (as an index)</td>
+<td>0-based</td>
+</tr>
+<tr>
+<td><code>${#rStaff}</code> (as a value)</td>
+<td>1-based</td>
+</tr>
+</tbody>
+</table>
+<h3 id="type-assertions">Type assertions</h3>
+<pre><code>${qty:num}
+${createdAt:date}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Excel side</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>:num</code></td>
+<td>Number</td>
+</tr>
+<tr>
+<td><code>:str</code></td>
+<td>String</td>
+</tr>
+<tr>
+<td><code>:bool</code></td>
+<td>Boolean TRUE/FALSE</td>
+</tr>
+<tr>
+<td><code>:date</code></td>
+<td>Date</td>
+</tr>
+<tr>
+<td><code>:time</code></td>
+<td>Time</td>
+</tr>
+<tr>
+<td><code>:datetime</code></td>
+<td>Datetime</td>
+</tr>
+</tbody>
+</table>
+<p>All optional. If written, a mismatch with the data's type is an error.</p>
+<h3 id="links-and-images">Links and images</h3>
+<pre><code>${[a.title](a.url)}          link
+${[](a.url)}                 label is the surrounding text in the cell
+${![a.alt](a.data)}          image
+${![](a.data)}               no alt
+</code></pre>
+<p>Just like Markdown, <code>!</code> distinguishes the two.</p>
+<p>An Excel hyperlink is an attribute attached to the cell, so <strong>the entire cell becomes the link</strong>.</p>
+<pre><code>Details: ${[a.title](a.url)}     →  the whole &quot;Details: {title}&quot; is a link
+Details${[](a.url)}              →  &quot;Details&quot; is a link
+</code></pre>
+<p>How the image fits (CSS <code>object-fit</code>).</p>
+<pre><code>${![a.alt](a.data)}           contain (default)
+${![a.alt](a.data)contain}
+${![a.alt](a.data)cover}
+${![a.alt](a.data)fill}
+</code></pre>
+<p>The reference is the cell's size. There is no pixel specification. Adjust the size via column width and row height.</p>
+<p>Two or more images may be written in the same cell (an Excel image is not cell content but a shape floating on the sheet, and multiple shapes can be anchored to the same cell; how they overlap depends on what you specify and their sizes). Images and links can coexist.</p>
+<p>To attach a link with the same URL as the cell value, write it twice.</p>
+<pre><code>${a.url}${[](a.url)}
+</code></pre>
+<hr />
+<h2 id="examples">Examples</h2>
+<h3 id="line-items-vertical">Line items (vertical)</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+<th>D</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>#{r}${items#r.name}</code></td>
+<td><code>${items#r.qty}</code></td>
+<td><code>${items#r.price}</code></td>
+<td><code>=B1*C1</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>#{r+1}</code></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="temperature-table-2d">Temperature table (2D)</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td></td>
+<td><code>#{c}${employees#c.name}</code></td>
+<td><code>#{c+1}</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>#{r}${dates#r}</code></td>
+<td><code>${temperatures#r#c}</code></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>#{r+1}</code></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="departments-staff-nesting">Departments → staff (nesting)</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+<th>D</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>#{rDept}${departments#rDept.name}</code></td>
+<td><code>Name</code></td>
+<td><code>Salary</code></td>
+<td><code>Joined</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>#{rStaff}No. ${#rStaff}</code></td>
+<td><code>${departments#rDept.staff#rStaff.name}</code></td>
+<td><code>${departments#rDept.staff#rStaff.salary}</code></td>
+<td><code>${departments#rDept.staff#rStaff.joinedAt}</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>#{rStaff+1}</code></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>${departments#rDept.name} total</code></td>
+<td><code>${departments#rDept.total}</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>#{rDept+1}</code></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="staff-laid-out-horizontally-per-department-horizontal-inside-vertical">Staff laid out horizontally per department (horizontal inside vertical)</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>#{rDept}${departments#rDept.name}</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td></td>
+<td><code>#{c}${departments#rDept.staff#c.name}</code></td>
+<td><code>#{c+1}</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>#{rDept+1}</code></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Staff cells are laid out to the largest department's width; a department with fewer staff leaves the extra cells empty.</p>
+<h3 id="tasks-growing-vertically-per-employee-vertical-inside-horizontal">Tasks growing vertically per employee (vertical inside horizontal)</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A</th>
+<th>B</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>#{c}${employees#c.name}</code></td>
+<td><code>#{c+1}</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>#{r}${employees#c.tasks#r}</code></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>#{r+1}</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Task cells are laid out to the largest employee's height; an employee with fewer tasks leaves the extra cells empty.</p>
+<p>An inner band may iterate over a collection unrelated to the outer one (as long as it does not extend outside). In that case the same content appears for each iteration of the outer band.</p>
+<h3 id="sheets">Sheets</h3>
+<p>Sheets have no declaration. If <code>#s</code> appears anywhere in a sheet, that sheet is repeated. <code>s</code> is a fixed name.</p>
+<p>Written in the sheet name (tab):</p>
+<pre><code>${sheets#s.name}
+</code></pre>
+<p>Written in a cell:</p>
+<pre><code>${sheets#s.customer}
+</code></pre>
+<hr />
+<h2 id="where-placeholders-can-be-written">Where placeholders can be written</h2>
+<p><code>${...}</code> can be written anywhere a string can be typed through the Excel UI.</p>
+<ul>
+<li>Cells</li>
+<li>Sheet names</li>
+<li>Headers/footers</li>
+<li>Text of shapes and text boxes</li>
+<li>Chart titles and axis labels</li>
+<li>Cell comments/notes</li>
+<li>Hyperlink tooltips</li>
+<li>Data validation input messages and error messages</li>
+<li>Document properties</li>
+</ul>
+<p>Places other than cells are mere string containers, so type assertions, links, and images <strong>can only be used in cells</strong>.</p>
+<p><code>#{...}</code> (repetition) is also <strong>cells only</strong>.</p>
+<hr />
+<h2 id="behavior-during-expansion">Behavior during expansion</h2>
+<h3 id="bands">Bands</h3>
+<p>Expansion is whole-row / whole-column duplication — the same operations as inserting or deleting rows/columns in Excel.</p>
+<p>A band nested in the same direction as its parent expands per block, with each block's own count. A band nested in the crossing direction shares its rows/columns with every block of the parent, so it expands once, to the largest count among the blocks; each block fills in its own values and shorter blocks leave the remaining cells empty.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Collections of different lengths in the same band</td>
+<td>min</td>
+</tr>
+<tr>
+<td>0 items</td>
+<td>The whole band disappears (including header rows inside it). For a crossing-direction inner band this applies only when every block has 0 items; a single empty block just leaves its cells empty</td>
+</tr>
+<tr>
+<td>The row/column where <code>#{r+1}</code> is placed</td>
+<td>Removed (writing content there is meaningless)</td>
+</tr>
+<tr>
+<td>Formulas inside a band</td>
+<td>Updated to stay consistent</td>
+</tr>
+<tr>
+<td>Tables, defined names, conditional formatting, print areas, filter ranges</td>
+<td>Follow the expansion</td>
+</tr>
+<tr>
+<td>Column widths when expanding horizontally</td>
+<td>Duplicated</td>
+</tr>
+<tr>
+<td>Shapes anchored to cells inside a band</td>
+<td>Repeated</td>
+</tr>
+</tbody>
+</table>
+<p>A shape set to "don't move or size with cells" is not repeated (controllable with standard Excel functionality).</p>
+<h3 id="sheets_1">Sheets</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Added sheets</td>
+<td>Inserted consecutively at the original position</td>
+</tr>
+<tr>
+<td>Tab name without <code>#s</code></td>
+<td>Made unique as <code>{original tab name} (n)</code> (n is a 1-based sequential number)</td>
+</tr>
+<tr>
+<td>0 items</td>
+<td>The sheet disappears</td>
+</tr>
+</tbody>
+</table>
+<h3 id="values">Values</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>null at the leaf (<code>customer.name</code> is null)</td>
+<td>Blank cell</td>
+</tr>
+<tr>
+<td>null inside a concatenation (<code>a</code> in <code>${a} ${b}</code>)</td>
+<td>Empty string</td>
+</tr>
+<tr>
+<td><code>${first} ${last}</code></td>
+<td>Concatenated into a string</td>
+</tr>
+<tr>
+<td>Boolean</td>
+<td>Excel TRUE/FALSE</td>
+</tr>
+<tr>
+<td>String containing newlines</td>
+<td>In-cell newlines</td>
+</tr>
+<tr>
+<td>url is null / empty string</td>
+<td>No link</td>
+</tr>
+<tr>
+<td>data is null / empty bytes</td>
+<td>No image</td>
+</tr>
+</tbody>
+</table>
+<p>Nothing is done about numeric precision (Excel has 15 digits) or limits on the number of rows/columns after expansion.</p>
+<hr />
+<h2 id="errors">Errors</h2>
+<p>Errors are reported in one of two ways.</p>
+<h3 id="reported-in-the-output-processing-continues">Reported in the output (processing continues)</h3>
+<p>A message replaces the offending construct only; everything else — surrounding text, other valid placeholders, the rest of the sheet — is processed as usual. The rule is uniform over every place placeholders can be written. Errors involving multiple constructs (marker pairs, overlapping bands, etc.) put the message on each of them. A band whose declaration is invalid is treated as undeclared and does not expand.</p>
+<p>Syntax errors use <code>#SYNTAX! &lt;construct&gt;: &lt;reason&gt;</code>. The list is written for <code>r</code>; for <code>c</code>, swap rows and columns:</p>
+<ul>
+<li><code>${}</code> <code>#{}</code> (empty)</li>
+<li><code>#{foo}</code> (name not starting with <code>r</code> or <code>c</code>)</li>
+<li><code>#{r+2}</code> (anything other than <code>+1</code>)</li>
+<li><code>#{s}</code> <code>#{s+1}</code> (sheets have no repetition declaration)</li>
+<li><code>#{r}</code> written without <code>#{r+1}</code></li>
+<li><code>#{rDept}</code> and <code>#{rDept+1}</code> in different columns</li>
+<li><code>#{r}</code> and <code>#{r+1}</code> in the same row (band height 0)</li>
+<li>Overlapping bands in the same direction</li>
+<li><code>#{rDept}</code> declared but <code>#rDept</code> never used anywhere</li>
+<li><code>${x#rFoo}</code> written but no <code>#{rFoo}</code> exists</li>
+<li>Using a band's name outside the band (headers/footers, sheet names, etc.)</li>
+<li>A merged cell straddling a band boundary</li>
+<li>Using type assertions, links, or images outside a cell</li>
+<li>Writing <code>#{...}</code> outside a cell</li>
+<li>Two or more links in the same cell</li>
+<li>A type assertion attached to a link or image (e.g. <code>${[a.title](a.url):str}</code>)</li>
+</ul>
+<p>Data errors local to a value use <code>#DATA! &lt;construct&gt;: &lt;reason&gt;</code>:</p>
+<ul>
+<li>Mismatch with a type assertion</li>
+<li>Referencing a non-scalar value (dict / list)</li>
+<li>Fixed index out of range (<code>${items#5}</code> when there are only 3)</li>
+<li>tz-aware datetime (the caller makes it naive)</li>
+<li>null in the middle of a path (<code>customer.name</code> when <code>customer</code> is null)</li>
+</ul>
+<h3 id="raised-processing-stops">Raised (processing stops)</h3>
+<p>The input as a whole is unusable; substitution never starts.</p>
+<ul>
+<li>Root is not an object</li>
+<li>Property name contains <code>.</code> <code>#</code> <code>:</code> <code>(</code> <code>)</code> <code>[</code> <code>]</code> <code>!</code> <code>$</code> <code>{</code> <code>}</code></li>
+</ul>
+<p>If a sheet name violates Excel's constraints (31 characters, <code>\ / ? * [ ] :</code>, duplicates), Excel raises the error.</p>
+<hr />
+<h2 id="out-of-scope">Out of scope</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Escaping</td>
+<td>Outputting a literal <code>${</code> is not allowed</td>
+</tr>
+<tr>
+<td>Placeholders inside formulas</td>
+<td>Excel's formula bar rejects <code>${...}</code>. Abandoned</td>
+</tr>
+<tr>
+<td>Hidden sheets, sheet protection</td>
+<td>Not considered</td>
+</tr>
+<tr>
+<td>Fetching images from URLs</td>
+<td>The caller converts them to bytes</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
