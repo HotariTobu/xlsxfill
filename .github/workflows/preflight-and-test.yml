@@ -1,0 +1,34 @@
+name: Preflight & Test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version-file: pyproject.toml
+      - uses: astral-sh/setup-uv@v10.0.1
+      - run: uv sync
+      - run: make preflight
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version-file: pyproject.toml
+      - uses: astral-sh/setup-uv@v10.0.1
+      - run: uv sync
+      - run: make test

@@ -1,4 +1,9 @@
 site_name: xlsxfill
+site_description: Generate an xlsx by merging a template xlsx with data.
+site_url: https://hotaritobu.github.io/xlsxfill/
+repo_url: https://github.com/HotariTobu/xlsxfill
+repo_name: HotariTobu/xlsxfill
+edit_uri: edit/main/docs/
 
 theme:
   name: material
@@ -17,3 +22,4 @@ plugins:
 extra:
   version:
     provider: mike
+    default: latest
