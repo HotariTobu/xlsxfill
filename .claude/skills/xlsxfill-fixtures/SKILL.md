@@ -19,14 +19,15 @@ tests/data_raise/<case>.template.xlsx / <case>.input.json / <case>.error.json
 ## Workflow
 
 1. Generate the template with a Go program (excelize)
-2. Write input.json
-3. Author the expected by editing the template's extracted XML parts
-4. Verify: full dump + part diff
-5. Only then consider the fixture done
+2. Canonize the template
+3. Write input.json
+4. Author the expected by editing the template's extracted XML parts
+5. Verify: full dump + part diff
+6. Only then consider the fixture done
 
 ## 1. Generate the template (excelize / Go)
 
-Write one generator function per book with excelize v2.11 and run it. Use excelize rather than authoring template XML by hand because it emits single-line XML with a stable element/attribute order — that is what makes step 3's targeted `Edit` calls and the byte-identity invariant workable.
+Write one generator function per book with excelize v2.11 and run it. Use excelize rather than authoring template XML by hand because it emits single-line XML with a stable element/attribute order — that is what makes step 4's targeted `Edit` calls and the byte-identity invariant workable.
 
 Helper pattern that keeps generators short:
 
@@ -50,13 +51,30 @@ Gotchas learned the hard way:
 - Print areas are defined names (`_xlnm.Print_Area`, Scope = sheet name)
 - A shape's "don't move or size with cells" is `Shape.Format.Positioning = "absolute"`
 - Dates can be written as serial values into a formatted cell (`SetCellValue(sheet, "D6", 46251)`)
+- Make the first case sheet by renaming the one `NewFile` already gives you (`SetSheetName("Sheet1", …)`). Deleting it instead leaves the parts numbered from `sheet2.xml`
 
-## 2. input.json
+## 2. Canonize the template
+
+```bash
+uv run python .claude/skills/xlsxfill-fixtures/scripts/canonize.py tests/data_golden/<book>.template.xlsx
+```
+
+Run it the moment the template is generated, before writing anything against it. What excelize writes is a perfectly good xlsx and not the one the suite is written against, in three ways that would otherwise surface as differences between a template and its expected — differences the substitution never made:
+
+- **The package.** `[Content_Types].xml` and the relationship parts come out in excelize's arrangement; xlsxedit rebuilds both when it saves
+- **The serialization.** Parts xlsxedit keeps as blobs — charts, drawings, tables, comments — stay as excelize wrote them, while the parts it parses come back in lxml's form
+- **`sst/@count`.** excelize writes the number of entries; ECMA-376 §18.4.9 asks for the number of references
+
+Templates only. It refuses anything else, because a fill *appends* what it adds to `[Content_Types].xml` while a save *sorts* the whole list — canonizing an expected would move it away from the very run it records.
+
+Every step checks its own work and refuses rather than changing what a workbook holds, so a run that prints `already canonical` for each of the existing templates is the standing proof that it and the suite still agree.
+
+## 3. input.json
 
 - One file per book (merged input). Keys must not collide between cases; sharing a key is fine when the value is identical
 - Type tags (the runner converts them): `{"$date": "2026-08-17"}` / `{"$time": "09:30"}` / `{"$datetime": "2026-08-17T09:30"}` / `{"$bytes": "<base64>"}`
 
-## 3. Author the expected (hand-edit XML)
+## 4. Author the expected (hand-edit XML)
 
 1. `unzip` the template.xlsx into a working directory
 2. Edit only the parts substitution touches, **using the Edit tool** — command-driven edits (sed, python, heredocs) hide the diff from the user and are forbidden
@@ -76,12 +94,40 @@ sheet1.xml, before → after:
 
 sharedStrings.xml: append `<si><t>Alice</t></si>` at the end (index 34), keep entry 1, and set `count` to the actual reference total and `uniqueCount` to the actual entry total.
 
-## 4. Verify (every book, every time)
+## 5. Verify (every book, every time)
 
 1. **Full dump** — `scripts/dumpbook/` is a bundled Go probe. First use: `cd scripts/dumpbook && go mod tidy`. Then:
    ```bash
    go run . path/to/book.expected.xlsx
    ```
-   It prints every cell's value/type, formulas, column widths, hyperlinks, and picture counts. Check the output against the case expectations line by line — this catches wrong indices and geometry that a visual skim misses. It skips sheets excelize cannot read (e.g. tab names over 31 characters); verify those tabs directly in workbook.xml
+   It prints one sorted fact per line, in two layers.
+
+   **Resolved** — what a reader of xlsx understands the workbook to hold: cells (type, raw value, displayed value, formula, expanded style), merges, hyperlinks, data validations, conditional formats, tables, defined names, pictures (sha256 of the image bytes, alt text, anchor, offsets, positioning), comments, sheet visibility, sheet view, sheet properties, page layout and margins, row/column geometry.
+
+   **Structural** — `part` lines flatten every remaining part node by node, with no model of what it means, plus a `blob` hash for each binary part. This is the only coverage charts, VML, themes, `docProps`, `[Content_Types].xml` and the `.rels` get: excelize has no reader for any of them, so a fixture whose chart title or axis label is wrong would otherwise pass unnoticed.
+
+   Read both against the case expectations line by line — this catches wrong indices and geometry that a visual skim misses.
+
+   The output is canonical, not the file's bytes, so it also answers "are these two books the same workbook?":
+   ```bash
+   diff -u <(go run . a.xlsx) <(go run . b.xlsx)
+   ```
+   How the XML is written — the declaration's quoting, `<x/>` against `<x></x>`, which of two prefixes bound to one namespace a tag uses — never reaches the dump. Element *order* does reach the `part` lines, so a set-like part such as `[Content_Types].xml` shows a difference when its entries are merely rearranged. That is wanted here — fixtures are pinned to their exact form — but it is a difference in form, not in what Excel would show.
+
+   Every cell appears twice, and the pair is the point:
+
+   - `cell` — what excelize resolves: the displayed value, the shared string looked up, the style expanded
+   - `raw-cell` — what the sheet actually stores
+
+   They differ where excelize interprets. Asked about a cell inside a merged block it answers with the block's value, so a cell storing nothing and a cell storing the same text look alike through `cell` alone; `raw-cell` tells them apart. `raw-cell` is emitted for every sheet, always.
+
+   What it will not do:
+
+   - **Skip anything silently.** A sheet excelize refuses to address — a tab name over 31 characters, which is what an embedded `#SYNTAX!` in a sheet name produces — is read straight out of the package instead and announced with a `book fallback` line
+   - **Miss a cell.** The cells to report come from the sheet's own XML, not from `GetRows`, which drops the empty cells at the end of a row — and a cell holding nothing but a style is exactly that: empty, and still data
+   - **Swallow an error.** A failed call prints a `*-error` fact, so a missing line always means missing data rather than a call that quietly returned nothing
+   - **Print a pointer.** Structs go through JSON. `%+v` prints addresses that change between runs and read as differences
+
+   Row and column geometry also comes from the XML, never through excelize: `GetRowVisible` reports a row that does not exist as hidden, and indexes rows by position rather than by their `r` attribute.
 2. **Part diff** — unzip template and expected separately and `diff -rq`. The differences must be exactly: the parts substitution touches, plus deliberately added/removed parts. Anything else is a bug in the expected
 3. **Recount** `count` / `uniqueCount` after editing and confirm they match what you wrote
