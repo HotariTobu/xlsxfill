@@ -39,4 +39,4 @@ def decode(node: object) -> Value:
 
 def load_input(path: Path) -> Value:
     """Load an input.json into input data."""
-    return decode(json.loads(path.read_text()))
+    return decode(json.loads(path.read_text(encoding="utf-8")))
