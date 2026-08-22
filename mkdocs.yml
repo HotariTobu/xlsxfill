@@ -7,6 +7,25 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: green
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
 
 nav:
   - Home: index.md
