@@ -11,8 +11,6 @@ API_PACKAGE = "xlsxfill"
 API_HANDLER = "python"
 API_PLUGIN = "mkdocstrings"
 
-FULL_URIS = ("index.md", "syntax.md")
-
 KIND_FUNCTION = "function"
 KIND_CLASS = "class"
 KIND_ALIAS = "type alias"
@@ -82,6 +80,7 @@ class _Plugin(Protocol):
 
 class _File(Protocol):
     src_uri: str
+    url: str
 
 
 class _Page(Protocol):
@@ -183,8 +182,14 @@ def _index(name: str, summary: str, base: str) -> str:
     return "\n".join(lines)
 
 
+def _tail(file: _File) -> str:
+    if file.src_uri in PAGES:
+        return file.src_uri
+    return "" if file.url == "./" else file.url
+
+
 def _full() -> str:
-    return "\n\n".join(_MARKDOWN[uri] for uri in (*FULL_URIS, API_URI))
+    return "\n\n".join(_MARKDOWN[uri] for uri in PAGES)
 
 
 def on_files(
@@ -198,7 +203,7 @@ def on_files(
     base = site_url.rstrip("/") + "/"
     _URLS.clear()
     _URLS.update(
-        (file.src_uri, base + file.src_uri)
+        (file.src_uri, base + _tail(file))
         for file in files
         if file.src_uri.endswith(".md")
     )
@@ -216,7 +221,7 @@ def on_files(
 
 def on_page_markdown(markdown: str, *, page: _Page, **_kwargs: object) -> str:
     uri = page.file.src_uri
-    if uri != API_URI:
+    if uri in PAGES and uri != API_URI:
         _MARKDOWN[uri] = _absolute(markdown.strip())
     return markdown
 
