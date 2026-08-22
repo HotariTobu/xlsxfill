@@ -10,17 +10,38 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
-concurrency:
-  group: docs-deploy
-  cancel-in-progress: false
+env:
+  UV_NO_DEFAULT_GROUPS: "1"
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
-    env:
-      UV_NO_DEFAULT_GROUPS: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.0.1
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install docs deps
+        run: uv sync --group docs
+
+      - name: Strict build
+        run: uv run mkdocs build --strict
+
+  deploy:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: docs-deploy
+      cancel-in-progress: false
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -35,17 +56,12 @@ jobs:
       - name: Install docs deps
         run: uv sync --group docs
 
-      - name: Strict build (validation gate)
-        run: uv run mkdocs build --strict
-
       - name: Configure git
-        if: github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Fetch gh-pages branch
-        if: github.event_name != 'pull_request'
         run: git fetch origin gh-pages --depth=1
 
       - name: Deploy dev (main branch)
