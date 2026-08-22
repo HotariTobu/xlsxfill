@@ -1,0 +1,12 @@
+{
+  "products": [{"name": "apple", "desc": "red fruit"}, {"name": "banana", "desc": "yellow fruit"}],
+  "quarters": [{"name": "Q1", "desc": "Jan-Mar"}, {"name": "Q2", "desc": "Apr-Jun"}],
+  "fruits": ["grape", "melon"],
+  "seasons": ["spring", "summer"],
+  "tasks": ["design", "build", "test"],
+  "members": ["Alice", "Bob"],
+  "months": ["Apr", "May", "Jun"],
+  "owners": ["Carol", "Dave"],
+  "metrics": ["sales", "profit"],
+  "regions": ["East", "West", "North"]
+}

@@ -2,14 +2,18 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://hotaritobu.github.io/xlsxfill/dev/</loc>
-         <lastmod>2026-08-19</lastmod>
+         <lastmod>2026-08-22</lastmod>
     </url>
     <url>
          <loc>https://hotaritobu.github.io/xlsxfill/dev/api/</loc>
-         <lastmod>2026-08-19</lastmod>
+         <lastmod>2026-08-22</lastmod>
+    </url>
+    <url>
+         <loc>https://hotaritobu.github.io/xlsxfill/dev/samples/</loc>
+         <lastmod>2026-08-22</lastmod>
     </url>
     <url>
          <loc>https://hotaritobu.github.io/xlsxfill/dev/syntax/</loc>
-         <lastmod>2026-08-19</lastmod>
+         <lastmod>2026-08-22</lastmod>
     </url>
 </urlset>

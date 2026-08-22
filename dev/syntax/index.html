@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://hotaritobu.github.io/xlsxfill/dev/syntax/">
       
       
-        <link rel="prev" href="..">
+        <link rel="prev" href="../samples/">
       
       
         <link rel="next" href="../api/">
@@ -122,6 +122,46 @@
     
     
     
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
     
       <div class="md-header__source">
         <a href="https://github.com/HotariTobu/xlsxfill" title="Go to repository" class="md-source" data-md-component="source">
@@ -198,6 +238,33 @@
     
   
     Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../samples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Samples
   
 
     
@@ -948,9 +1015,9 @@
 <hr />
 <h2 id="notation">Notation</h2>
 <h3 id="repetition">Repetition</h3>
-<pre><code>#{rDept}              start position of the band
+<div class="highlight"><pre><span></span><code>#{rDept}              start position of the band
 #{rDept+1}            start position of the next band
-</code></pre>
+</code></pre></div>
 <p><code>+1</code> is not an end marker. It indicates <strong>where the second iteration starts</strong>. The distance between the start position and the <code>+1</code> position is the band's height (or width). Just like Excel's autofill: placing the first and second determines the period.</p>
 <p>The prefix determines the direction.</p>
 <table>
@@ -976,33 +1043,33 @@
 </table>
 <p><code>r</code> only looks at the row, so the column is arbitrary. <code>c</code> only looks at the column, so the row is arbitrary.</p>
 <p>Anything may follow <code>r</code> / <code>c</code>, including Japanese.</p>
-<pre><code>#{r}        #{rDept}        #{rStaff}        #{r部署}
+<div class="highlight"><pre><span></span><code>#{r}        #{rDept}        #{rStaff}        #{r部署}
 #{c}        #{cEmp}
-</code></pre>
+</code></pre></div>
 <p>Sheet repetition has no declaration (→ Examples &gt; Sheets).</p>
 <p>A start marker may share a cell with other content.</p>
-<pre><code>#{rDept}${departments#rDept.name}
-</code></pre>
+<div class="highlight"><pre><span></span><code>#{rDept}${departments#rDept.name}
+</code></pre></div>
 <p>Vertical and horizontal start markers may be written in the same cell.</p>
-<pre><code>#{r}#{c}${temperatures#r#c}
-</code></pre>
+<div class="highlight"><pre><span></span><code>#{r}#{c}${temperatures#r#c}
+</code></pre></div>
 <p>Whitespace is allowed.</p>
-<pre><code>#{ rDept }        #{ rDept + 1 }
-</code></pre>
+<div class="highlight"><pre><span></span><code>#{ rDept }        #{ rDept + 1 }
+</code></pre></div>
 <h3 id="value-references">Value references</h3>
-<pre><code>${customer.name}                          scalar
+<div class="highlight"><pre><span></span><code>${customer.name}                          scalar
 ${departments#rDept.name}                 current element of a band
 ${departments#rDept.staff#rStaff.name}    nesting
 ${temperatures#r#c}                       2D intersection
 ${items#2}                                fixed index
 ${#rStaff}                                index value
 ${sheets#s.name}                          sheet
-</code></pre>
+</code></pre></div>
 <p>After <code>#</code>, <strong>a name means a variable, a number means a fixed index</strong>.</p>
 <p>Square brackets are not used, because <code>[</code> is not allowed in sheet names.</p>
 <p>Whitespace is allowed.</p>
-<pre><code>${ customer . name }
-</code></pre>
+<div class="highlight"><pre><span></span><code>${ customer . name }
+</code></pre></div>
 <h3 id="index">Index</h3>
 <table>
 <thead>
@@ -1023,9 +1090,9 @@ ${sheets#s.name}                          sheet
 </tbody>
 </table>
 <h3 id="type-assertions">Type assertions</h3>
-<pre><code>${qty:num}
+<div class="highlight"><pre><span></span><code>${qty:num}
 ${createdAt:date}
-</code></pre>
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1062,27 +1129,27 @@ ${createdAt:date}
 </table>
 <p>All optional. If written, a mismatch with the data's type is an error.</p>
 <h3 id="links-and-images">Links and images</h3>
-<pre><code>${[a.title](a.url)}          link
+<div class="highlight"><pre><span></span><code>${[a.title](a.url)}          link
 ${[](a.url)}                 label is the surrounding text in the cell
 ${![a.alt](a.data)}          image
 ${![](a.data)}               no alt
-</code></pre>
+</code></pre></div>
 <p>Just like Markdown, <code>!</code> distinguishes the two.</p>
 <p>An Excel hyperlink is an attribute attached to the cell, so <strong>the entire cell becomes the link</strong>.</p>
-<pre><code>Details: ${[a.title](a.url)}     →  the whole &quot;Details: {title}&quot; is a link
+<div class="highlight"><pre><span></span><code>Details: ${[a.title](a.url)}     →  the whole &quot;Details: {title}&quot; is a link
 Details${[](a.url)}              →  &quot;Details&quot; is a link
-</code></pre>
+</code></pre></div>
 <p>How the image fits (CSS <code>object-fit</code>).</p>
-<pre><code>${![a.alt](a.data)}           contain (default)
+<div class="highlight"><pre><span></span><code>${![a.alt](a.data)}           contain (default)
 ${![a.alt](a.data)contain}
 ${![a.alt](a.data)cover}
 ${![a.alt](a.data)fill}
-</code></pre>
+</code></pre></div>
 <p>The reference is the cell's size. There is no pixel specification. Adjust the size via column width and row height.</p>
 <p>Two or more images may be written in the same cell (an Excel image is not cell content but a shape floating on the sheet, and multiple shapes can be anchored to the same cell; how they overlap depends on what you specify and their sizes). Images and links can coexist.</p>
 <p>To attach a link with the same URL as the cell value, write it twice.</p>
-<pre><code>${a.url}${[](a.url)}
-</code></pre>
+<div class="highlight"><pre><span></span><code>${a.url}${[](a.url)}
+</code></pre></div>
 <hr />
 <h2 id="examples">Examples</h2>
 <h3 id="line-items-vertical">Line items (vertical)</h3>
@@ -1257,11 +1324,11 @@ ${![a.alt](a.data)fill}
 <h3 id="sheets">Sheets</h3>
 <p>Sheets have no declaration. If <code>#s</code> appears anywhere in a sheet, that sheet is repeated. <code>s</code> is a fixed name.</p>
 <p>Written in the sheet name (tab):</p>
-<pre><code>${sheets#s.name}
-</code></pre>
+<div class="highlight"><pre><span></span><code>${sheets#s.name}
+</code></pre></div>
 <p>Written in a cell:</p>
-<pre><code>${sheets#s.customer}
-</code></pre>
+<div class="highlight"><pre><span></span><code>${sheets#s.customer}
+</code></pre></div>
 <hr />
 <h2 id="where-placeholders-can-be-written">Where placeholders can be written</h2>
 <p><code>${...}</code> can be written anywhere a string can be typed through the Excel UI.</p>

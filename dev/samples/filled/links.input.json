@@ -1,0 +1,5 @@
+{
+  "a": {"title": "Details", "url": "https://example.com"},
+  "nolink": {"title": "t", "url": null},
+  "draft": {"title": "Draft", "url": ""}
+}
