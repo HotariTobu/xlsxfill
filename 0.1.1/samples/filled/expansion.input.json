@@ -1,0 +1,85 @@
+{
+  "items": [
+    {"name": "apple", "qty": 2, "price": 100},
+    {"name": "orange", "qty": 3, "price": 50},
+    {"name": "banana", "qty": 1, "price": 80}
+  ],
+  "departments": [
+    {"name": "Sales", "total": 500, "staff": [
+      {"name": "Alice", "salary": 300, "joinedAt": {"$date": "2020-04-01"}},
+      {"name": "Bob", "salary": 200, "joinedAt": {"$date": "2021-05-01"}}
+    ]},
+    {"name": "Dev", "total": 400, "staff": [
+      {"name": "Carol", "salary": 400, "joinedAt": {"$date": "2022-06-01"}}
+    ]},
+    {"name": "Support", "total": 900, "staff": [
+      {"name": "Dave", "salary": 350, "joinedAt": {"$date": "2023-07-01"}},
+      {"name": "Eve", "salary": 320, "joinedAt": {"$date": "2024-08-01"}},
+      {"name": "Frank", "salary": 230, "joinedAt": {"$date": "2025-09-01"}}
+    ]}
+  ],
+  "employees": [
+    {"name": "Alice", "tasks": ["A", "B"]},
+    {"name": "Bob", "tasks": ["C"]},
+    {"name": "Carol", "tasks": ["D", "E", "F"]}
+  ],
+  "cdepts": [
+    {"name": "Sales", "total": 500, "staff": [{"name": "Alice"}, {"name": "Bob"}]},
+    {"name": "Dev", "total": 400, "staff": [{"name": "Carol"}]},
+    {"name": "Support", "total": 900, "staff": [{"name": "Dave"}, {"name": "Eve"}, {"name": "Frank"}]}
+  ],
+  "l3depts": [
+    {"name": "Sales", "teams": [
+      {"name": "Team1", "staff": ["Alice", "Bob"]},
+      {"name": "Team2", "staff": ["Carol"]}
+    ]},
+    {"name": "Support", "teams": [
+      {"name": "Team3", "staff": ["Dave", "Eve"]},
+      {"name": "Team4", "staff": ["Frank"]}
+    ]}
+  ],
+  "dates": ["8/1", "8/2", "8/3"],
+  "temperatures": [[36.2, 36.5, 36.9], [36.1, 36.8, 36.4], [36.3, 36.6, 36.7]],
+  "soloItems": [{"name": "only", "qty": 1, "price": 10}],
+  "rzitems": [],
+  "czitems": [],
+  "rrzo": [],
+  "rczo": [],
+  "crzo": [],
+  "cczo": [],
+  "rrzi": [
+    {"name": "Sales", "total": 500, "staff": [
+      {"name": "Alice", "salary": 300, "joinedAt": {"$date": "2020-04-01"}},
+      {"name": "Bob", "salary": 200, "joinedAt": {"$date": "2021-05-01"}}
+    ]},
+    {"name": "Dev", "total": 400, "staff": []}
+  ],
+  "rczi": [
+    {"name": "Sales", "staff": [{"name": "Alice"}, {"name": "Bob"}]},
+    {"name": "Dev", "staff": []}
+  ],
+  "crzi": [{"name": "Alice", "tasks": ["A", "B"]}, {"name": "Bob", "tasks": []}],
+  "cczi": [
+    {"name": "Sales", "total": 500, "staff": [{"name": "Alice"}, {"name": "Bob"}]},
+    {"name": "Dev", "total": 400, "staff": []}
+  ],
+  "plannedDepts": [{"name": "Sales", "staff": []}, {"name": "Dev", "staff": []}],
+  "idleEmployees": [{"name": "Alice", "tasks": []}, {"name": "Bob", "tasks": []}],
+  "zrdates": [],
+  "zrtemps": [],
+  "zcemps": [],
+  "zctemps": [[], [], []],
+  "mnames": ["a", "b", "c"],
+  "mprices": [100, 200],
+  "cmnames": ["a", "b", "c"],
+  "cmprices": [100, 200],
+  "rrmi": [{"name": "Sales", "staff": ["Alice", "Bob", "Carol"], "bonus": [10, 20]}],
+  "rcmi": [{"name": "Sales", "staff": ["Alice", "Bob", "Carol"], "bonus": [10, 20]}],
+  "crmi": [{"name": "Sales", "staff": ["Alice", "Bob", "Carol"], "bonus": [10, 20]}],
+  "ccmi": [{"name": "Sales", "staff": ["Alice", "Bob", "Carol"], "bonus": [10, 20]}],
+  "urdepts": [{"name": "Sales"}, {"name": "Dev"}],
+  "notes": ["note1", "note2"],
+  "rcur": [{"name": "Sales"}, {"name": "Dev"}],
+  "crur": [{"name": "Sales"}, {"name": "Dev"}],
+  "ccur": [{"name": "Sales"}, {"name": "Dev"}]
+}

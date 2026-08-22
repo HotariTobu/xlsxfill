@@ -1,0 +1,23 @@
+{
+  "customer": {"name": "Alice"},
+  "first": "Alice",
+  "last": "Smith",
+  "qty": 3,
+  "d": {"$date": "2026-08-17"},
+  "t": {"$time": "09:30"},
+  "dt": {"$datetime": "2026-08-17T09:30"},
+  "ok": true,
+  "memo": "line1\nline2",
+  "vspace": "税込　",
+  "missing": {"name": null},
+  "na": null,
+  "nb": "x",
+  "items": ["a", "b", "c"],
+  "vfitems": ["a", "b", "c"],
+  "hfitems": ["a", "b", "c"],
+  "title": "April",
+  "author": "Alice",
+  "note": "memo",
+  "tip": "hint",
+  "msg": "enter a value"
+}
