@@ -62,6 +62,9 @@ extra:
     - icon: simple/pypi
       link: https://pypi.org/project/xlsxfill/
       name: xlsxfill on PyPI
+    - icon: material/robot-outline
+      link: https://hotaritobu.github.io/xlsxfill/latest/llms.txt
+      name: xlsxfill for language models
   version:
     provider: mike
     default: latest

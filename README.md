@@ -45,6 +45,11 @@ The placeholder syntax is documented in
 run through the library are shown in
 [Samples](https://hotaritobu.github.io/xlsxfill/latest/samples/).
 
+For language models, the documentation is indexed in
+[llms.txt](https://hotaritobu.github.io/xlsxfill/latest/llms.txt), and the pages
+it lists are concatenated into
+[llms-full.txt](https://hotaritobu.github.io/xlsxfill/latest/llms-full.txt).
+
 ## Acknowledgments
 
 [xlsxedit](https://github.com/jonas-kupferschmid/xlsxedit)
