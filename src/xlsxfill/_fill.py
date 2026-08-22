@@ -1,5 +1,3 @@
-"""The entry point."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, BinaryIO
@@ -29,10 +27,11 @@ def fill(
         output: Where the resulting xlsx is written.
 
     Returns:
-        The ``#SYNTAX!`` / ``#DATA!`` errors embedded in the output.
+        One problem per [message][xlsxfill.BaseProblem.message] embedded in the
+        output.
 
     Raises:
-        DataError: The input data as a whole is unusable.
+        DataError: ``data`` is unusable as a whole.
     """
     validate(data)
     book = Excel.open(template)

@@ -1,12 +1,3 @@
-"""Band detection, validation, and expansion geometry.
-
-A band is declared by a start marker ``#{name}`` and a period marker
-``#{name+1}``; the distance between them is the period. Vertical (``r``)
-bands span whole rows, horizontal (``c``) bands whole columns. Expansion
-replaces the band region with one copy per iteration and removes the
-row/column holding the ``+1`` marker.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -18,26 +9,20 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class MarkerAt:
-    """A parsed marker at a cell position."""
-
     marker: Marker
     row: int
     col: int
     seg: int
 
     def pos(self, *, vertical: bool) -> int:
-        """The coordinate the marker pins in its band's direction."""
         return self.row if vertical else self.col
 
     def cross(self, *, vertical: bool) -> int:
-        """The coordinate that must agree between the two markers."""
         return self.col if vertical else self.row
 
 
 @dataclass
 class Band:
-    """A validated band declaration."""
-
     name: str
     vertical: bool
     start: int
@@ -48,38 +33,30 @@ class Band:
 
     @property
     def stop(self) -> int:
-        """One past the last coordinate of the band region."""
         return self.start + self.period
 
     @property
     def marker_stop(self) -> int:
-        """One past the removed ``+1`` coordinate."""
         return self.stop + 1
 
     def contains(self, other: Band) -> bool:
-        """Whether ``other``'s region and ``+1`` line sit inside this region."""
         return self.start <= other.start and other.marker_stop <= self.marker_stop
 
     def covers(self, coordinate: int) -> bool:
-        """Whether ``coordinate`` is inside the band region."""
         return self.start <= coordinate < self.stop
 
     def reset_children(self) -> Band:
-        """Clear the nesting links so the forest can be rebuilt."""
         self.children = []
         return self
 
 
 @dataclass
 class BandLayout:
-    """The validated band structure of one sheet."""
-
     roots_by_direction: dict[bool, list[Band]]
     marker_reasons: dict[tuple[int, int, int], str]
     bands: list[Band]
 
     def drop(self, band_ids: set[int], reason: str) -> None:
-        """Invalidate bands: mark their markers and rebuild the forests."""
         if not band_ids:
             return
         for band in self.bands:
@@ -94,11 +71,9 @@ class BandLayout:
 
     @property
     def names(self) -> frozenset[str]:
-        """The names of the valid bands."""
         return frozenset(band.name for band in self.bands)
 
     def band_for(self, name: str, row: int, col: int, *, seen: set[str]) -> Band | None:
-        """The innermost band named ``name`` whose region covers a position."""
         found: Band | None = None
         for band in self.bands:
             if band.name != name:
@@ -117,7 +92,6 @@ def _pair_markers(
     vertical: bool,
     reasons: dict[tuple[int, int, int], str],
 ) -> list[Band]:
-    """Pair start and ``+1`` markers of one name and direction."""
     starts = sorted(
         (m for m in markers if not m.marker.plus),
         key=lambda m: m.pos(vertical=vertical),
@@ -192,7 +166,6 @@ def _check_overlaps(
     bands: list[Band],
     reasons: dict[tuple[int, int, int], str],
 ) -> list[Band]:
-    """Drop same-direction bands that overlap without nesting."""
     bad: set[int] = set()
     for i, a in enumerate(bands):
         for j in range(i + 1, len(bands)):
@@ -212,7 +185,6 @@ def _check_overlaps(
 
 
 def _nest(bands: list[Band]) -> list[Band]:
-    """Arrange same-direction bands into a containment forest."""
     ordered = sorted(bands, key=lambda b: (b.start, -b.period))
     roots: list[Band] = []
     stack: list[Band] = []
@@ -228,7 +200,6 @@ def _nest(bands: list[Band]) -> list[Band]:
 
 
 def build_layout(marker_ats: list[MarkerAt]) -> BandLayout:
-    """Validate all markers of a sheet and build the band structure."""
     reasons: dict[tuple[int, int, int], str] = {}
     valid = [m for m in marker_ats if m.marker.error is None]
     for marker_at in marker_ats:
@@ -256,10 +227,5 @@ def mark_unused(
     layout: BandLayout,
     is_used: dict[int, bool],
 ) -> None:
-    """Flag bands that are never referenced and drop them from the layout.
-
-    ``is_used`` maps ``id(band)`` to whether any value reference binds to
-    the band.
-    """
     dropped = {id(band) for band in layout.bands if not is_used.get(id(band), False)}
     layout.drop(dropped, "band is never used")

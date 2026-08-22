@@ -1,19 +1,3 @@
-"""Writing cell values without wrecking the shared-string table.
-
-``Cell.value`` has three problems as a bulk writer. It never reuses an
-existing shared string, so writing the same word into a thousand cells
-grows the table a thousand times. When the entry it is replacing looks
-unreferenced it edits that entry in place, which rewrites a table other
-cells may yet come to share. And deciding that takes a scan of every cell
-in the workbook, so writing n cells costs n squared.
-
-A writer keeps the index it needs, built once and kept up to date.
-
-The table's own ``count`` needs restating afterwards, for a reason that
-has nothing to do with this writer; see
-[`refresh_shared_string_count`][_patched_xlsxedit.refresh_shared_string_count].
-"""
-
 from __future__ import annotations
 
 from datetime import date, datetime, time
@@ -38,12 +22,6 @@ type Value = str | int | float | bool | date | time | datetime | None
 
 
 def serial(value: date | time | datetime) -> float | int:
-    """The Excel serial number of a date, a time, or both.
-
-    Raises:
-        ValueError: The datetime carries a time zone, which a serial
-            number cannot express.
-    """
     if isinstance(value, datetime):
         if value.tzinfo is not None:
             message = "a datetime with a time zone has no serial number"
@@ -64,10 +42,7 @@ def _fraction(value: time) -> float:
 
 
 class Writer:
-    """Writes cell values into one workbook, reusing shared strings."""
-
     def __init__(self, workbook: Workbook) -> None:
-        """Index the shared strings ``workbook`` already has."""
         self._workbook = workbook
         self._index: dict[str, int] = {}
         table = workbook.shared_strings
@@ -76,12 +51,6 @@ class Writer:
                 self._index.setdefault(table.text(i), i)
 
     def write(self, cell: Cell, value: Value) -> None:
-        """Put ``value`` in ``cell``, keeping its format.
-
-        Raises:
-            ValueError: The value cannot be written, such as a datetime
-                carrying a time zone.
-        """
         element = cell._element
         if isinstance(value, bool):
             self._clear(cell)
@@ -102,7 +71,6 @@ class Writer:
         self._set_v(element, repr(number))
 
     def intern(self, text: str) -> int:
-        """The shared-string index of ``text``, adding it if it is new."""
         found = self._index.get(text)
         if found is not None:
             return found
@@ -144,20 +112,6 @@ class Writer:
 
 
 def refresh_shared_string_count(workbook: Workbook) -> None:
-    """Restate how many cells the shared string table actually serves.
-
-    ``sst/@count`` is the total number of string references in the
-    workbook, not the size of the table -- ECMA-376 §18.4.9. The only
-    thing that maintains it is ``SharedStringTable.add``, which adds one
-    per new entry, so the attribute tracks the table instead. Write the
-    same string into two cells and the count is one short; clear a cell
-    and it stays too high.
-
-    Nothing can keep a running total, because the references move: rows
-    and columns get copied, cells get cleared. Counting them is the only
-    answer, and it has to happen once the sheets say what they finally
-    say.
-    """
     table = workbook.shared_strings
     if table is None:
         return
@@ -172,18 +126,6 @@ def refresh_shared_string_count(workbook: Workbook) -> None:
 
 
 def _mark_space(si: etree._Element) -> None:
-    """Mark an entry whose whitespace a reader would otherwise be free to fold.
-
-    ``SharedStringTable.add`` decides this on ``" " in text``, which looks
-    at spaces and nothing else. A string broken across lines carries no
-    space, so it goes in unmarked and the line breaks can be folded away.
-    Tabs go the same way. What has to be marked is whitespace at either
-    end, or a line break or a tab anywhere.
-
-    Only ever marks. An entry marked where it did not need to be is
-    harmless, and unmarking it would be a matter of taste, not of the
-    text surviving.
-    """
     for node in si.iter(_T):
         text = node.text or ""
         if text != text.strip() or any(c in text for c in "\n\r\t"):

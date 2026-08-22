@@ -1,17 +1,3 @@
-"""Pictures placed from bytes, at a size the caller decides.
-
-``Worksheet.add_image`` takes a filesystem path and fits the picture into
-a pixel box of its own choosing. Substitution has the bytes in hand and
-has already worked out where the picture should go, so this takes both.
-
-Reading the header for the picture's own size is the same thing Excel
-does when you insert one — it is how it can offer to keep the aspect
-ratio — so the size is available before anything is placed.
-
-Sizes arrive in pixels and may be fractional, because the format counts
-in units far finer than a pixel and rounding on the way in would show.
-"""
-
 from __future__ import annotations
 
 import struct
@@ -44,11 +30,6 @@ _JPEG_SIZE_MARKERS = frozenset(range(0xC0, 0xD0)) - {0xC4, 0xC8, 0xCC}
 
 
 def read_size(data: bytes) -> tuple[int, int]:
-    """The picture's own width and height in pixels.
-
-    Raises:
-        ValueError: The bytes are not a picture this can read.
-    """
     if data.startswith(_PNG_MAGIC):
         return _png_size(data)
     if data.startswith(_GIF_MAGIC):
@@ -60,7 +41,6 @@ def read_size(data: bytes) -> tuple[int, int]:
 
 
 def content_type(data: bytes) -> tuple[str, str]:
-    """The media type and file extension the bytes should be stored under."""
     if data.startswith(_PNG_MAGIC):
         return CT.PNG, "png"
     if data.startswith(_GIF_MAGIC):
@@ -115,24 +95,6 @@ def add_picture(
     alt: str | None = None,
     media: dict[bytes, Part] | None = None,
 ) -> None:
-    """Anchor a picture at a cell, drawn at the given pixel size.
-
-    Args:
-        workbook: The workbook to add the media part to.
-        worksheet: The sheet to draw on.
-        row: 1-based anchor row.
-        column: 1-based anchor column.
-        data: The picture file's bytes.
-        width: How wide to draw it, in pixels.
-        height: How tall to draw it, in pixels.
-        offset_x: Pixels right of the anchor cell's left edge.
-        offset_y: Pixels below the anchor cell's top edge.
-        crop: The part of the picture to show, as ``(left, top, right,
-            bottom)`` in its own pixels.
-        alt: Alternative text.
-        media: Media parts already added, keyed by their bytes, so the
-            same picture used twice is stored once.
-    """
     package = workbook._package
     drawing, root = _drawing_part(workbook, worksheet)
 
@@ -165,7 +127,6 @@ def add_picture(
 def _crop_edges(
     crop: tuple[float, float, float, float] | None, size: tuple[int, int]
 ) -> tuple[int, int, int, int]:
-    """The four edges as the hundred-thousandths the format counts in."""
     if crop is None:
         return (0, 0, 0, 0)
     left, top, right, bottom = crop

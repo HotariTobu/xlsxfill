@@ -1,11 +1,3 @@
-"""Attaching a link to a cell.
-
-``Hyperlink.url`` reuses an existing external relationship whenever the
-target matches, so ten cells linking to the same address end up sharing
-one relationship. Excel gives each link its own, and sharing means
-removing one link takes the others with it.
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -23,13 +15,6 @@ _R_ID = f"{{{OFFICE_REL_NS}}}id"
 
 
 def add_link(worksheet: Worksheet, address: str, url: str) -> None:
-    """Point the cell at ``address`` to ``url``, on a link of its own.
-
-    Args:
-        worksheet: The sheet the cell is on.
-        address: The cell in A1 notation.
-        url: The link target.
-    """
     part = worksheet._part
     block = part.element.find(_HYPERLINKS)
     if block is None:

@@ -1,5 +1,3 @@
-"""One open workbook."""
-
 from __future__ import annotations
 
 import re
@@ -41,60 +39,25 @@ _PIXELS_PER_CHARACTER = 7
 
 
 class Book:
-    """An open workbook."""
-
     def __init__(self, workbook: Workbook) -> None:
-        """Wrap an already-open ``xlsxedit`` workbook."""
         self._workbook = workbook
         self._writer = Writer(workbook)
         self._media: dict[bytes, Part] = {}
         self._sheets: dict[int, Sheet] = {}
 
     def __repr__(self) -> str:
-        """Show the tab names."""
         return f"<Book {self._workbook.sheetnames!r}>"
 
     @classmethod
     def open(cls, source: str | Path | BinaryIO) -> Book:
-        """Open an existing xlsx.
-
-        Args:
-            source: A path or an open binary stream.
-
-        Returns:
-            The workbook.
-        """
         return cls(Workbook.open(source))
 
     def save(self, target: str | Path | BinaryIO) -> None:
-        """Write the workbook out.
-
-        Args:
-            target: A path or an open binary stream.
-        """
         refresh_table_columns(self._workbook)
         refresh_shared_string_count(self._workbook)
         self._workbook.save(target)
 
     def find(self, pattern: str | re.Pattern[str] | None = None) -> list[Found]:
-        """Every piece of text in the workbook, or those matching ``pattern``.
-
-        Wider than Excel's own search, which reaches cells and comments
-        only: sheet names, headers and footers, shape and chart text,
-        validation messages, link tooltips, and the document properties
-        are all included.
-
-        Narrower in one way. A cell holding a formula is never returned,
-        because what it shows is worked out rather than written, and
-        writing to it would throw the formula away.
-
-        Args:
-            pattern: A regular expression; ``None`` matches everything.
-
-        Returns:
-            The hits in tab order, then reading order within each sheet,
-            then the workbook's own text.
-        """
         matches = re.compile(pattern) if isinstance(pattern, str) else pattern
         found: list[Found] = []
         for worksheet in self._workbook.worksheets:
@@ -131,41 +94,12 @@ class Book:
     def set(self, where: CellText | SheetText | BookText, value: str) -> None: ...
 
     def set(self, where: Where, value: CellValue) -> None:
-        """Put ``value`` where ``where`` points.
-
-        A cell keeps its format. ``None`` empties it. Text goes in as
-        text and dates go in as dates, the way typing them into Excel
-        would; how the file stores either is not the caller's concern.
-        Every other place holds text and takes text.
-
-        Setting a sheet name renames the tab and carries formulas that
-        referred to the sheet along with it.
-
-        Args:
-            where: The place to write to.
-            value: What to put there.
-
-        Raises:
-            ValueError: The value cannot be written, such as a datetime
-                carrying a time zone.
-        """
         if isinstance(where, Cell):
             self._writer.write(self._cell(where), value)
             return
         where._ref.write("" if value is None else str(value))
 
     def cell_size(self, cell: Cell) -> tuple[int, int]:
-        """How wide and tall a cell is on screen, in pixels.
-
-        Its column's width and its row's height as Excel draws them,
-        including the defaults a sheet falls back to.
-
-        Args:
-            cell: The cell to measure.
-
-        Returns:
-            ``(width, height)`` in pixels.
-        """
         worksheet = cell.sheet._sheet
         characters = worksheet.column_dimensions[index_to_col(cell.column - 1)].width
         points = worksheet.row_dimensions[cell.row].height
@@ -177,14 +111,6 @@ class Book:
         )
 
     def insert_link(self, cell: Cell, url: str) -> None:
-        """Make a cell link to ``url``.
-
-        The cell keeps whatever it displays; only the link is attached.
-
-        Args:
-            cell: The cell to link from.
-            url: The link target.
-        """
         add_link(
             cell.sheet._sheet,
             join_address(index_to_col(cell.column - 1), cell.row),
@@ -203,27 +129,6 @@ class Book:
         crop: tuple[float, float, float, float] | None = None,
         alt: str | None = None,
     ) -> None:
-        """Place an image on a sheet, anchored to a cell.
-
-        Sizes and offsets are in pixels, so they and
-        [`Image.width`][_excel.Image.width] and
-        [`cell_size`][_excel.Book.cell_size] all speak the same unit and
-        can be worked out against each other. Whether to keep the aspect
-        ratio, and what to do with what does not fit, is settled by what
-        the caller passes here.
-
-        Args:
-            cell: The cell to anchor to.
-            image: The image to place.
-            width: How wide to draw it.
-            height: How tall to draw it.
-            offset_x: How far right of the anchor cell's left edge.
-            offset_y: How far below the anchor cell's top edge.
-            crop: The part of the image to show, as ``(left, top, right,
-                bottom)`` in the image's own pixels. ``None`` shows all
-                of it.
-            alt: Alternative text.
-        """
         add_picture(
             self._workbook,
             cell.sheet._sheet,
@@ -240,23 +145,6 @@ class Book:
         )
 
     def duplicate_sheet(self, sheet: Sheet, names: Sequence[str]) -> list[Sheet]:
-        """Copy a sheet, once per name in ``names``.
-
-        What Excel does with "Move or Copy → Create a copy": the copies
-        carry the cells, the formats, and the sheet's own images, charts
-        and tables. They are placed directly after ``sheet``, in the
-        order given — not at the end of the workbook.
-
-        Args:
-            sheet: The sheet to copy.
-            names: The tab name of each copy.
-
-        Returns:
-            The copies, in the order given. ``sheet`` is not included.
-
-        Raises:
-            ValueError: A name is already taken.
-        """
         copies: list[Sheet] = []
         after = sheet.name
         for name in names:
@@ -266,17 +154,7 @@ class Book:
         return copies
 
     def delete_sheet(self, sheet: Sheet) -> None:
-        """Delete a sheet.
-
-        Args:
-            sheet: The sheet to delete.
-
-        Raises:
-            ValueError: It is the workbook's only sheet.
-        """
         self._workbook.remove_worksheet(sheet.name)
-
-    # -------------------------------------------------------------- inside
 
     def _sheet_for(self, part: WorksheetPart) -> Sheet:
         found = self._sheets.get(id(part))

@@ -1,5 +1,3 @@
-"""Shared helpers for the fixture-driven tests."""
-
 import base64
 import json
 from datetime import date, datetime, time
@@ -12,11 +10,6 @@ DATA_RAISE = Path(__file__).parent / "data_raise"
 
 
 def decode(node: object) -> Value:
-    """Convert a parsed input.json node into input data.
-
-    Type tags (``{"$date": ...}`` / ``{"$time": ...}`` / ``{"$datetime": ...}`` /
-    ``{"$bytes": <base64>}``) become the corresponding Python values.
-    """
     if isinstance(node, dict):
         if len(node) == 1:
             ((key, raw),) = node.items()
@@ -38,5 +31,4 @@ def decode(node: object) -> Value:
 
 
 def load_input(path: Path) -> Value:
-    """Load an input.json into input data."""
     return decode(json.loads(path.read_text(encoding="utf-8")))

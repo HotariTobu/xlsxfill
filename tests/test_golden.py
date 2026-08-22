@@ -1,5 +1,3 @@
-"""Golden tests: every member of the output must match expected.xlsx exactly."""
-
 import zipfile
 from io import BytesIO
 from typing import cast
@@ -23,7 +21,6 @@ def _members(source: BytesIO) -> dict[str, bytes]:
 
 
 def assert_books_equal(actual_io: BytesIO, expected_io: BytesIO) -> None:
-    """Assert that two workbooks have identical members with identical bytes."""
     actual = _members(actual_io)
     expected = _members(expected_io)
     assert sorted(actual) == sorted(expected)
@@ -33,7 +30,6 @@ def assert_books_equal(actual_io: BytesIO, expected_io: BytesIO) -> None:
 
 @pytest.mark.parametrize("book", BOOKS)
 def test_golden(book: str) -> None:
-    """Fill the template with the input and compare against the expected."""
     data = cast("dict[str, Value]", load_input(DATA_GOLDEN / f"{book}.input.json"))
     output = BytesIO()
     fill(DATA_GOLDEN / f"{book}.template.xlsx", data, output)

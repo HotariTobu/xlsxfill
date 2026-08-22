@@ -1,5 +1,3 @@
-"""Errors reported in the output while processing continues."""
-
 from dataclasses import dataclass
 from typing import Literal
 
@@ -46,4 +44,8 @@ class CellProblem(BaseProblem):
 
 
 type Problem = BookProblem | SheetProblem | CellProblem
-"""A problem reported in the output."""
+"""A problem reported in the output.
+
+One of [BookProblem][xlsxfill.BookProblem],
+[SheetProblem][xlsxfill.SheetProblem] or [CellProblem][xlsxfill.CellProblem].
+"""

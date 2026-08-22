@@ -1,5 +1,3 @@
-"""The input data model."""
-
 from datetime import date, datetime, time
 
 type Value = (

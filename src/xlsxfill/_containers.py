@@ -1,14 +1,3 @@
-"""Substitution in non-cell string containers.
-
-Sheet names, headers/footers, shape and chart text, comments, hyperlink
-tooltips, data-validation messages, and document properties are plain
-string containers: values concatenate as text, and type assertions,
-links, images, and band markers are syntax errors there.
-
-Text arrives as text: how a workbook stores it is settled below this
-layer, so nothing here ever sees XML escaping.
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
@@ -31,11 +20,7 @@ if TYPE_CHECKING:
 
 
 class ProblemSink(Protocol):
-    """Callback receiving ``(kind, construct, reason)`` for each failure."""
-
-    def __call__(self, kind: str, construct: str, reason: str, /) -> str:
-        """Record the problem and return the message to embed."""
-        ...
+    def __call__(self, kind: str, construct: str, reason: str, /) -> str: ...
 
 
 def substitute_container(
@@ -45,13 +30,6 @@ def substitute_container(
     report: ProblemSink,
     declared_bands: frozenset[str] = frozenset(),
 ) -> str | None:
-    """Substitute placeholders in a plain-text container.
-
-    ``declared_bands`` are the valid band names of the enclosing sheet,
-    used to distinguish a band name used outside its band from an
-    undeclared one. Returns the new text, or ``None`` when the text is
-    static so the caller can leave it alone.
-    """
     parsed = tokenize(text)
     if parsed.is_static:
         return None

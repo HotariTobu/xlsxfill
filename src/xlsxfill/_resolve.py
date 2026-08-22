@@ -1,5 +1,3 @@
-"""Path resolution against the input data and value rendering."""
-
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
@@ -16,7 +14,6 @@ _EPOCH = date(1899, 12, 30)
 
 
 def kind_of(value: object) -> str:
-    """Classify a value with the kind names the messages use."""
     if value is None:
         return "null"
     if isinstance(value, bool):
@@ -41,10 +38,7 @@ def kind_of(value: object) -> str:
 
 
 class ResolveError(Exception):
-    """A ``#DATA!`` failure while resolving or rendering a value."""
-
     def __init__(self, reason: str) -> None:
-        """Store the message ``reason``."""
         super().__init__(reason)
         self.reason = reason
 
@@ -54,13 +48,6 @@ def resolve(
     data: Mapping[str, Value],
     bindings: Mapping[str, int],
 ) -> Value:
-    """Resolve a parsed path against ``data`` with band ``bindings``.
-
-    ``bindings`` maps band names (and ``s``) to 0-based iteration indices.
-
-    Raises:
-        ResolveError: A ``#DATA!`` failure local to this value.
-    """
     if len(path) == 1 and isinstance(path[0], IndexStep) and not path[0].is_fixed:
         return bindings[path[0].symbol] + 1
 
@@ -99,11 +86,6 @@ def collection_length(
     data: Mapping[str, Value],
     bindings: Mapping[str, int],
 ) -> int | None:
-    """Length of the collection a path iterates with ``band``, or ``None``.
-
-    Resolves the path prefix before the first ``#band`` step; a prefix
-    that fails to resolve or is not a list contributes no length.
-    """
     prefix: list[PathStep] = []
     for step in path:
         if isinstance(step, IndexStep) and step.symbol == band:
@@ -123,11 +105,6 @@ def collection_length(
 
 
 def check_assertion(value: Value, expected: str) -> None:
-    """Check a type assertion against a resolved value.
-
-    Raises:
-        ResolveError: The value's kind does not match ``expected``.
-    """
     actual = kind_of(value)
     if actual != expected:
         raise ResolveError(
@@ -136,22 +113,15 @@ def check_assertion(value: Value, expected: str) -> None:
 
 
 def date_serial(value: date) -> int:
-    """Excel serial number of a date."""
     return (value - _EPOCH).days
 
 
 def time_fraction(value: time) -> float:
-    """Excel day fraction of a time."""
     seconds = value.hour * 3600 + value.minute * 60 + value.second
     return (seconds + value.microsecond / 1_000_000) / 86400
 
 
 def render_number(value: Value) -> str:
-    """Render a scalar as the numeric ``<v>`` text (shortest round-trip).
-
-    Raises:
-        ResolveError: The value is a tz-aware datetime.
-    """
     if isinstance(value, datetime):
         if value.tzinfo is not None:
             raise ResolveError("tz-aware datetime is not supported (make it naive)")
@@ -164,18 +134,12 @@ def render_number(value: Value) -> str:
 
 
 def check_scalar(value: Value) -> None:
-    """Reject non-scalar leaf values.
-
-    Raises:
-        ResolveError: The value is a dict or a list.
-    """
     actual = kind_of(value)
     if actual in ("dict", "list"):
         raise ResolveError(f"referenced value is not a scalar ({actual})")
 
 
 def concat_text(value: Value) -> str:
-    """Render a resolved value inside a concatenation."""
     if value is None:
         return ""
     if isinstance(value, str):

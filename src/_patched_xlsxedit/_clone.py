@@ -1,21 +1,3 @@
-"""Clone rows and columns within one worksheet.
-
-``xlsxedit.sheet_clone`` duplicates a whole worksheet: ``deepcopy`` the
-part element, then follow what was anchored to it (relationships, local
-defined names). The same operation one level down — duplicating a row or
-column region inside a sheet — has no upstream equivalent, and it is what
-band expansion is.
-
-``Worksheet.insert_rows`` is a different operation: it writes new data
-rows and pushes the rest down, copying only the ``s`` attributes of a
-template row. It never duplicates cell content.
-
-The map is given as a source list: output line ``base + i`` is a copy of
-template line ``sources[i]``, so one template line may appear many times
-and another not at all. Following the references through that map is
-``_remap``'s, the way ``sheet_clone`` leaves rels to its callers.
-"""
-
 from __future__ import annotations
 
 from copy import deepcopy
@@ -37,13 +19,11 @@ _C = f"{{{SML_NS}}}c"
 
 
 def cell_column(c_elm: _Element) -> int:
-    """0-based column index of a ``<c>`` element."""
     letters, _ = split_address(c_elm.get("r", "A1"))
     return col_to_index(letters)
 
 
 def set_row_number(row_elm: _Element, num: int) -> None:
-    """Renumber a ``<row>`` element and the addresses of its cells."""
     row_elm.set("r", str(num))
     for c_elm in row_elm.findall(_C):
         letters, _ = split_address(c_elm.get("r", "A1"))
@@ -51,7 +31,6 @@ def set_row_number(row_elm: _Element, num: int) -> None:
 
 
 def set_cell_column(c_elm: _Element, col: int, row: int) -> None:
-    """Move a ``<c>`` element to 0-based ``col`` in 1-based ``row``."""
     c_elm.set("r", join_address(index_to_col(col), row))
 
 
@@ -60,13 +39,6 @@ def copy_rows(
     sources: list[int],
     base: int = 1,
 ) -> list[tuple[int, _Element]]:
-    """Rebuild ``<sheetData>`` so output row ``base + i`` clones ``sources[i]``.
-
-    Each named template row is deep-copied, so a clone carries its cells,
-    styles, and formulas — the row-level counterpart of the ``deepcopy``
-    in ``xlsxedit.Workbook.copy_worksheet``. Rows the map does not name
-    disappear. Returns ``(slot index, row element)`` in output order.
-    """
     by_num = {int(r.get("r", "0")): r for r in sheet_data.findall(_ROW)}
     produced: list[tuple[int, _Element]] = []
     for child in list(sheet_data):
@@ -87,10 +59,6 @@ def copy_columns(
     sources: list[int],
     base: int = 0,
 ) -> list[tuple[int, _Element]]:
-    """Rebuild every row so output column ``base + i`` clones ``sources[i]``.
-
-    Returns ``(slot index, cell element)`` in row-major output order.
-    """
     produced: list[tuple[int, _Element]] = []
     for row_elm in sheet_data.findall(_ROW):
         row_num = int(row_elm.get("r", "0"))

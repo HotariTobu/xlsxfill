@@ -1,5 +1,3 @@
-"""Input-data validation before a fill run."""
-
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -31,11 +29,6 @@ def _validate_names(value: object) -> None:
 
 
 def validate(data: object) -> None:
-    """Reject input whose shape or property names are unusable.
-
-    Raises:
-        DataError: The input data as a whole is unusable.
-    """
     if not isinstance(data, Mapping):
         raise DataError(f"input root must be an object, got {_root_kind(data)}")
     _validate_names(data)

@@ -1,5 +1,3 @@
-"""Raising tests: the input as a whole is unusable and fill raises."""
-
 import json
 from io import BytesIO
 from typing import TYPE_CHECKING, cast
@@ -21,7 +19,6 @@ CASES = sorted(
 
 @pytest.mark.parametrize("case", CASES)
 def test_raise(case: str) -> None:
-    """Fill the template with the invalid input and compare the raised error."""
     error = json.loads((DATA_RAISE / f"{case}.error.json").read_text(encoding="utf-8"))
     exception_type = getattr(xlsxfill, error["type"])
     data = cast("Mapping[str, Value]", load_input(DATA_RAISE / f"{case}.input.json"))

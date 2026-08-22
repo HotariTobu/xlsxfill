@@ -1,15 +1,3 @@
-"""Every piece of text in a workbook that is not a cell's own content.
-
-``Workbook.replace`` only reaches cells. A workbook's text is also in its
-tab names, its headers and footers, its comments, its shapes and charts,
-its validation messages, its link tooltips, and its document properties,
-and none of that is reachable at all today.
-
-Reading and writing both go through here. Parts that xlsxedit keeps as
-bytes rather than live elements are parsed once per sweep and written
-back whenever something in them changes.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -73,8 +61,6 @@ _PROPERTY_TAGS = (
 
 @dataclass
 class TextRef:
-    """One piece of text, with the means to read and rewrite it."""
-
     sheet: Worksheet | None
     part: str
     at: int
@@ -85,7 +71,6 @@ class TextRef:
 
 
 def sheet_texts(workbook: Workbook, worksheet: Worksheet) -> Iterator[TextRef]:
-    """Every piece of text one sheet carries outside its cells."""
     yield _name_ref(workbook, worksheet)
     yield from _header_refs(worksheet)
     yield from _validation_refs(worksheet)
@@ -96,16 +81,12 @@ def sheet_texts(workbook: Workbook, worksheet: Worksheet) -> Iterator[TextRef]:
 
 
 def book_texts(workbook: Workbook) -> Iterator[TextRef]:
-    """Every document property that holds text."""
     element = workbook.properties._element
     for at, tag in enumerate(_PROPERTY_TAGS):
         for found in element.iter(tag):
             yield TextRef(
                 None, "properties", at, read=_reader(found), write=_writer(found)
             )
-
-
-# ------------------------------------------------------------- element text
 
 
 def _reader(element: _Element) -> Callable[[], str]:
@@ -140,9 +121,6 @@ def _attr_writer(element: _Element, name: str) -> Callable[[str], None]:
     return write
 
 
-# --------------------------------------------------------------- sheet name
-
-
 def _name_ref(workbook: Workbook, worksheet: Worksheet) -> TextRef:
     def read() -> str:
         return worksheet.name
@@ -159,9 +137,6 @@ def _name_ref(workbook: Workbook, worksheet: Worksheet) -> TextRef:
         rename_sheets_in_charts(workbook, [(old, value)])
 
     return TextRef(worksheet, "name", 0, read=read, write=write)
-
-
-# ----------------------------------------------------------- sheet elements
 
 
 def _header_refs(worksheet: Worksheet) -> Iterator[TextRef]:
@@ -224,11 +199,7 @@ def _first_cell(ref: str) -> tuple[int | None, int | None]:
     return (row, col_to_index(letters) + 1)
 
 
-# ------------------------------------------------------------- blob parts
-
-
 def _blob_refs(part: Part, tag: str) -> Iterator[tuple[_Element, Callable[[], None]]]:
-    """Every ``<tag>`` in a part kept as bytes, with a way to write it back."""
     root = parse_xml(part.blob)
 
     def flush() -> None:

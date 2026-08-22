@@ -1,16 +1,3 @@
-"""``Workbook.copy_worksheet`` for xlsxedit releases that lack it.
-
-Merged upstream (commit ``3271d365``, "added copy_worksheet Fixes #2")
-but not in 1.0.1, which ships neither the method nor the
-``xlsxedit.sheet_clone`` module it needs. This is a port of that merged
-code, kept behaviour-identical so it can be deleted the day upstream
-releases.
-
-[`copy_worksheet`][_patched_xlsxedit.copy_worksheet] calls upstream's own
-method when the installed version has it, so the port stops running by
-itself.
-"""
-
 from __future__ import annotations
 
 import re
@@ -130,7 +117,6 @@ def _uniquify_table(part: Part, workbook: Workbook) -> None:
 def clone_sheet_relationships(
     source_part: WorksheetPart, dest_part: WorksheetPart, workbook: Workbook
 ) -> None:
-    """Copy sheet rels onto ``dest_part`` (same rIds; share images, clone the rest)."""
     cloned: dict[int, Part] = {}
     _copy_relationships(source_part, dest_part, workbook._package, cloned, workbook)
 
@@ -138,7 +124,6 @@ def clone_sheet_relationships(
 def copy_local_defined_names(
     workbook: Workbook, source_index: int, dest_index: int
 ) -> None:
-    """Duplicate definedNames with ``localSheetId`` equal to ``source_index``."""
     wb_elm = workbook._workbook_part.element
     block = wb_elm.find(_DEFINED_NAMES)
     if block is None:
@@ -155,23 +140,6 @@ def copy_local_defined_names(
 def copy_worksheet(
     workbook: Workbook, name: str, new_name: str, *, after: str | None = None
 ) -> Worksheet:
-    """Duplicate a worksheet and place the copy where ``after`` says.
-
-    Upstream's own method appends the copy to the end of the workbook and
-    offers no way to say otherwise, so this repositions afterwards. It
-    calls upstream when the installed version has the method, and runs
-    the port of it when it does not.
-
-    Args:
-        workbook: The workbook to work in.
-        name: The sheet to copy.
-        new_name: The copy's tab name.
-        after: The sheet the copy goes directly after; ``None`` leaves it
-            at the end.
-
-    Returns:
-        The copy.
-    """
     upstream = getattr(type(workbook), "copy_worksheet", None)
     copy = (
         upstream(workbook, name, new_name)
@@ -186,17 +154,11 @@ def copy_worksheet(
 
 
 def _deselect(worksheet: Worksheet) -> None:
-    """Take the selection off a copy.
-
-    Copying a sheet copies its ``<sheetView>`` with it, selection and
-    all, so a workbook comes out claiming two tabs are the one in front.
-    """
     for view in worksheet._part.element.iter(_SHEET_VIEW):
         view.attrib.pop("tabSelected", None)
 
 
 def move_worksheet(workbook: Workbook, name: str, *, after: str) -> None:
-    """Move a sheet's tab so it sits directly after ``after``."""
     workbook_part = workbook._workbook_part
     sheets = workbook_part.element.find(_SHEETS)
     if sheets is None:
@@ -215,7 +177,6 @@ def move_worksheet(workbook: Workbook, name: str, *, after: str) -> None:
 
 
 def _copy_worksheet(workbook: Workbook, name: str, new_name: str) -> Worksheet:
-    """Duplicate an existing worksheet (cells, styles, merges, sheet-owned parts)."""
     sheets_by_name = workbook._sheets_by_name
     if new_name in sheets_by_name:
         raise DuplicateWorksheetError(f"worksheet {new_name!r} already exists")

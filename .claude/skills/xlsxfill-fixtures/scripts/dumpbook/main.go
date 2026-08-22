@@ -1,38 +1,3 @@
-// dumpbook prints everything a fixture can carry, as one sorted fact per
-// line, so two books can be compared with plain diff:
-//
-//	go run . a.xlsx > a.txt && go run . b.xlsx > b.txt && diff -u a.txt b.txt
-//
-// The output is a canonical view, not the file's bytes: how the XML is
-// written -- the declaration's quoting, <x/> against <x></x>, which of two
-// prefixes bound to one namespace a tag uses -- never reaches it.
-//
-// It comes in two layers, and they answer different questions.
-//
-//   - Resolved facts -- cell, merge, table, picture, view and the rest --
-//     say what the workbook holds, as a reader of xlsx understands it.
-//   - part facts flatten every remaining part node by node, with no model
-//     of what it means. That is the only way charts, VML, themes, document
-//     properties, content types and relationships get covered at all:
-//     excelize has no reader for any of them. Being structural, these do
-//     show element order, which for a set-like part such as
-//     [Content_Types].xml is a difference in form rather than in meaning.
-//     That is wanted here -- fixtures are pinned down to their exact form
-//     -- but it is not a claim about what Excel would show.
-//
-// Three rules keep it trustworthy:
-//
-//   - Nothing is skipped silently. A sheet excelize refuses to address --
-//     a tab name over 31 characters, say -- is read straight out of the
-//     package instead, and says so. A part nobody wrote a reader for is
-//     flattened rather than ignored.
-//   - No error is swallowed. A call that fails prints a fact recording the
-//     failure, so a missing line always means missing data.
-//   - No pointer is ever printed. Structs go through JSON, which follows
-//     pointers to their values; %+v would print addresses that change on
-//     every run and read as differences.
-//
-// Usage: go run . <book.xlsx>
 package main
 
 import (
@@ -73,7 +38,6 @@ func main() {
 
 	f, err := excelize.OpenFile(path)
 	if err != nil {
-		// Still worth dumping: the package reader needs no excelize.
 		emit("book\topen-failed\t%v", err)
 		emit("book\tfallback\twhole package read as XML")
 		dumpRaw(pkg, emit, nil)
@@ -110,8 +74,6 @@ func main() {
 	if len(unreachable) > 0 {
 		emit("book\tfallback\t%d sheet(s) read as XML instead", len(unreachable))
 	}
-	// Always: row and column geometry comes from the XML, and so do the
-	// cells of any sheet excelize would not address.
 	dumpRaw(pkg, emit, unreachable)
 	dumpParts(pkg, emit)
 	dumpModelled(pkg, emit)
@@ -126,8 +88,6 @@ func print(out []string) {
 	}
 }
 
-// jsonOf renders a struct by value. Pointer fields become the values they
-// point at, so nothing in the output changes between runs.
 func jsonOf(v any) string {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -136,20 +96,12 @@ func jsonOf(v any) string {
 	return string(b)
 }
 
-// ------------------------------------------------------------- via excelize
-
-// dumpSheet reports one sheet. Returns false when excelize will not address
-// it at all, so the caller can fall back to reading the XML.
 func dumpSheet(f *excelize.File, sheet string, refs []string, emit func(string, ...any)) bool {
-	// A probe, only to find out whether excelize will address this sheet
-	// at all. The cells to report come from the XML, not from here.
 	if _, err := f.GetRows(sheet); err != nil {
 		emit("sheet-unreachable\t%s\t%v", sheet, err)
 		return false
 	}
 
-	// Every cell the sheet declares. A cell holding nothing but a style
-	// counts: formatting is data, and it is the one GetRows would drop.
 	for _, ref := range refs {
 		dumpCell(f, sheet, ref, emit)
 	}
@@ -208,8 +160,6 @@ func dumpSheet(f *excelize.File, sheet string, refs []string, emit func(string, 
 		}
 	}
 
-	// Ask which cells hold pictures. Walking only the cells that carry a
-	// value would miss every picture anchored beside or below them.
 	if cells, err := f.GetPictureCells(sheet); report("picture", err) {
 		var lines []string
 		for _, ref := range cells {
@@ -241,8 +191,6 @@ func dumpSheet(f *excelize.File, sheet string, refs []string, emit func(string, 
 		}
 	}
 
-	// Sheet-level settings. A hidden sheet, a frozen pane or a changed
-	// page setup is as much a property of the fixture as its cells.
 	if visible, err := f.GetSheetVisible(sheet); report("visible", err) {
 		emit("visible\t%s\t%v", sheet, visible)
 	}
@@ -291,7 +239,6 @@ func dumpCell(f *excelize.File, sheet, ref string, emit func(string, ...any)) {
 	if raw == "" && value == "" && formula == "" && styleID == 0 {
 		return
 	}
-	// The style index means nothing across two files; the style does.
 	style := "default"
 	if styleID != 0 {
 		s, err := f.GetStyle(styleID)
@@ -314,10 +261,6 @@ func dumpCell(f *excelize.File, sheet, ref string, emit func(string, ...any)) {
 	}
 }
 
-// ------------------------------------------------------ parts nothing models
-
-// nsPrefix shortens the namespaces OOXML uses, so a path stays readable.
-// A namespace with no entry keeps its URI: unreadable beats ambiguous.
 var nsPrefix = map[string]string{
 	"http://schemas.openxmlformats.org/spreadsheetml/2006/main":                        "s",
 	"http://schemas.openxmlformats.org/drawingml/2006/main":                            "a",
@@ -379,14 +322,6 @@ func short(space, local string) string {
 	return "{" + space + "}" + local
 }
 
-// modelled says whether some other part of the dump already reports this
-// part's contents in resolved form. Everything else is flattened, so a
-// part nobody wrote a reader for is still compared rather than ignored.
-// Every part listed here has a reader below that covers all of it. A part
-// only partly covered does not belong here: it would be excluded from the
-// flattening and never fully compared. styles.xml is deliberately absent
-// -- it is a table of formats nothing reports as a whole, so it is
-// flattened like any other part nobody models.
 func modelled(name string) bool {
 	switch name {
 	case "xl/workbook.xml", "xl/sharedStrings.xml":
@@ -403,11 +338,6 @@ func modelled(name string) bool {
 	return false
 }
 
-// flattenPart renders any XML part as one line per node and per run of
-// text, with no model of what the part means. Charts, VML, themes,
-// document properties, content types and relationships all go through
-// here: excelize has no reader for them, and a fixture that gets one
-// wrong would otherwise pass unnoticed.
 func flattenPart(part string, blob []byte, emit func(string, ...any)) {
 	dec := xml.NewDecoder(strings.NewReader(string(blob)))
 	var path []string
@@ -447,8 +377,6 @@ func flattenPart(part string, blob []byte, emit func(string, ...any)) {
 	}
 }
 
-// dumpParts covers every part no other reader speaks for. Binary parts are
-// reported by content hash, so a picture nothing anchors is still seen.
 func dumpParts(pkg *pkgFile, emit func(string, ...any)) {
 	for _, name := range pkg.order {
 		if modelled(name) {
@@ -465,8 +393,6 @@ func dumpParts(pkg *pkgFile, emit func(string, ...any)) {
 		emit("blob\t%s\tsha256=%x\tbytes=%d", name, sum, len(blob))
 	}
 }
-
-// ----------------------------------------------------------- straight XML
 
 const (
 	nsMain = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
@@ -603,8 +529,6 @@ type xlRels struct {
 	} `xml:"Relationship"`
 }
 
-// xlText is a <t>, with the mark that decides whether its whitespace
-// survives a reader that is free to fold it.
 type xlText struct {
 	Space string `xml:"http://www.w3.org/XML/1998/namespace space,attr"`
 	Text  string `xml:",chardata"`
@@ -614,9 +538,6 @@ type xlVal struct {
 	Val string `xml:"val,attr"`
 }
 
-// xlRPr is the formatting of one run inside a shared string. Pointers, so
-// that a <color/> written with no attributes is told apart from no color
-// at all -- the two mean different things and the fixtures contain both.
 type xlRPr struct {
 	B         *xlVal `xml:"b"`
 	I         *xlVal `xml:"i"`
@@ -764,26 +685,16 @@ type xlSheet struct {
 	} `xml:"mergeCells"`
 }
 
-// dumpRaw reads sheets straight out of the package. When only is nil every
-// sheet is read; otherwise only the named ones. Lines are tagged so a
-// reader can tell at a glance which sheets did not come through excelize.
 func dumpRaw(pkg *pkgFile, emit func(string, ...any), only map[string]bool) {
 	strings_ := rawStrings(pkg, emit)
 
 	for i, sheet := range readSheets(pkg, emit) {
-		// Geometry always comes from here. excelize reports a row that
-		// does not exist as hidden and indexes rows by position rather
-		// than by their r attribute, so it cannot be trusted for this.
 		if only == nil {
 			emit("sheet[%d]\t%s", i, sheet.Name)
 		}
 		ws := sheet.WS
 		dumpRawGeometry(sheet.Name, &ws, emit)
 		dumpSheetPart(sheet.Name, &ws, emit)
-		// Always, for every sheet: what the cell actually stores. Asked
-		// about a cell inside a merged block, excelize answers with the
-		// block's value, so a cell that stores nothing and a cell that
-		// stores the same text look alike through it.
 		for _, row := range ws.SheetData.Row {
 			for _, c := range row.C {
 				kind, value := c.T, c.V
@@ -815,16 +726,11 @@ func dumpRaw(pkg *pkgFile, emit func(string, ...any), only map[string]bool) {
 	}
 }
 
-// rawSheet is one worksheet as the package stores it, in workbook order.
 type rawSheet struct {
 	Name string
 	WS   xlSheet
 }
 
-// readSheets parses every worksheet out of the package. This is the only
-// list of cells that can be trusted: excelize's GetRows drops the empty
-// cells at the end of a row, and a cell holding nothing but a style is
-// exactly that -- empty, and still data.
 func readSheets(pkg *pkgFile, emit func(string, ...any)) []rawSheet {
 	raw, ok := pkg.parts["xl/workbook.xml"]
 	if !ok {
@@ -871,8 +777,6 @@ func readSheets(pkg *pkgFile, emit func(string, ...any)) []rawSheet {
 	return out
 }
 
-// cellRefs lists, per sheet, the address of every cell the sheet actually
-// declares, in document order.
 func cellRefs(pkg *pkgFile, emit func(string, ...any)) map[string][]string {
 	out := map[string][]string{}
 	for _, sheet := range readSheets(pkg, emit) {
@@ -890,20 +794,12 @@ func cellRefs(pkg *pkgFile, emit func(string, ...any)) map[string][]string {
 	return out
 }
 
-// dumpRawGeometry reports what the sheet declares about its own rows and
-// columns. Only what is written down is reported: a row with no height of
-// its own says nothing here, rather than repeating the sheet default.
-// dumpSheetPart covers what excelize's sheet-level getters do not reach:
-// the declared dimension, the filter, protection, print options, and the
-// header and footer -- which carry substitutable text of their own.
 func dumpSheetPart(sheet string, ws *xlSheet, emit func(string, ...any)) {
 	emit("dimension\t%s\t%s", sheet, orDash(ws.Dimension.Ref))
 	emit("sheetpr\t%s\tfilterMode=%s\ttabColor=%s/%s", sheet,
 		orDash(ws.SheetPr.FilterMode), orDash(ws.SheetPr.TabColor.RGB),
 		orDash(ws.SheetPr.TabColor.Theme))
 	emit("autofilter\t%s\t%s", sheet, orDash(ws.AutoFilter.Ref))
-	// GetCellHyperLink answers with the target and nothing else. The
-	// tooltip is text a template substitutes into, so it has to be here.
 	var links []string
 	for _, h := range ws.Hyperlinks.Hyperlink {
 		links = append(links, fmt.Sprintf("%s\trel=%s\ttooltip=%q\tdisplay=%q\tlocation=%q",
@@ -972,7 +868,6 @@ func dumpRawGeometry(sheet string, ws *xlSheet, emit func(string, ...any)) {
 	}
 }
 
-// pad sorts numbers the way a reader expects: 2 before 10.
 func pad(n string) string {
 	v, err := strconv.Atoi(n)
 	if err != nil {
@@ -1020,11 +915,6 @@ func rawStrings(pkg *pkgFile, emit func(string, ...any)) []string {
 	return out
 }
 
-// --------------------------------------------- the parts a reader covers
-
-// dumpModelled reports what the semantic readers above leave out of the
-// parts they speak for. Each of these parts is excluded from the generic
-// flattening, so anything not said here would go uncompared.
 func dumpModelled(pkg *pkgFile, emit func(string, ...any)) {
 	dumpWorkbookPart(pkg, emit)
 	dumpSSTPart(pkg, emit)
@@ -1032,9 +922,6 @@ func dumpModelled(pkg *pkgFile, emit func(string, ...any)) {
 	dumpCommentParts(pkg, emit)
 }
 
-// dumpWorkbookPart covers what neither the sheet list nor GetDefinedName
-// reports: the date system every date in the book is read against, the
-// calculation settings, the window, and whether a defined name is hidden.
 func dumpWorkbookPart(pkg *pkgFile, emit func(string, ...any)) {
 	raw, ok := pkg.parts["xl/workbook.xml"]
 	if !ok {
@@ -1078,11 +965,6 @@ func dumpWorkbookPart(pkg *pkgFile, emit func(string, ...any)) {
 	}
 }
 
-// dumpSSTPart covers the table itself. Cell values resolve through it, so
-// its entries are reached that way -- but its bookkeeping is not: @count
-// is a count of references and goes wrong on its own, an entry nothing
-// points at leaves no trace in any cell, and the mark that protects an
-// entry's whitespace is invisible from the value alone.
 func dumpSSTPart(pkg *pkgFile, emit func(string, ...any)) {
 	sst, ok := readSST(pkg, emit)
 	if !ok {
@@ -1107,9 +989,6 @@ func dumpSSTPart(pkg *pkgFile, emit func(string, ...any)) {
 	}
 }
 
-// dumpTableParts covers the column names, which are the header row copied
-// into the table and have to be kept in step with it, and the filter the
-// table carries. GetTables reports neither.
 func dumpTableParts(pkg *pkgFile, emit func(string, ...any)) {
 	for _, name := range pkg.order {
 		if !strings.HasPrefix(name, "xl/tables/") || !strings.HasSuffix(name, ".xml") {
@@ -1135,8 +1014,6 @@ func dumpTableParts(pkg *pkgFile, emit func(string, ...any)) {
 	}
 }
 
-// dumpCommentParts covers the author table, which GetComments resolves
-// away, and the part each comment lives in.
 func dumpCommentParts(pkg *pkgFile, emit func(string, ...any)) {
 	for _, name := range pkg.order {
 		if !strings.HasPrefix(name, "xl/comments") || !strings.HasSuffix(name, ".xml") {

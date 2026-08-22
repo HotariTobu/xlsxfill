@@ -1,11 +1,3 @@
-"""Tokenizing and parsing of the placeholder notation.
-
-A string container's text splits into literal runs, ``${...}`` value
-placeholders, and ``#{...}`` band markers. Parsing never raises for bad
-notation; a construct that cannot be parsed carries the syntax-error
-reason instead, and substitution turns it into a ``#SYNTAX!`` message.
-"""
-
 from __future__ import annotations
 
 import re
@@ -26,25 +18,19 @@ _FIT_NAMES = ("contain", "cover", "fill")
 
 @dataclass(frozen=True)
 class PropStep:
-    """A ``.name`` step in a path expression."""
-
     name: str
 
 
 @dataclass(frozen=True)
 class IndexStep:
-    """A ``#symbol`` step: fixed index, sheet variable, or band variable."""
-
     symbol: str
 
     @property
     def is_fixed(self) -> bool:
-        """Whether the symbol is a 0-based fixed index."""
         return self.symbol.isdigit()
 
     @property
     def is_sheet(self) -> bool:
-        """Whether the symbol is the fixed sheet variable ``s``."""
         return self.symbol == "s"
 
 
@@ -53,15 +39,11 @@ type PathStep = PropStep | IndexStep
 
 @dataclass(frozen=True)
 class Literal:
-    """A run of raw (still XML-escaped) literal text."""
-
     raw: str
 
 
 @dataclass(frozen=True)
 class ValueRef:
-    """A ``${path}`` placeholder, optionally with a type assertion."""
-
     src: str
     path: tuple[PathStep, ...] = ()
     assert_type: str | None = None
@@ -70,8 +52,6 @@ class ValueRef:
 
 @dataclass(frozen=True)
 class Link:
-    """A ``${[label](url)}`` link placeholder."""
-
     src: str
     label_path: tuple[PathStep, ...] | None = None
     url_path: tuple[PathStep, ...] = ()
@@ -80,8 +60,6 @@ class Link:
 
 @dataclass(frozen=True)
 class Image:
-    """A ``${![alt](data)fit}`` image placeholder."""
-
     src: str
     alt_path: tuple[PathStep, ...] | None = None
     data_path: tuple[PathStep, ...] = ()
@@ -91,8 +69,6 @@ class Image:
 
 @dataclass(frozen=True)
 class Marker:
-    """A ``#{name}`` or ``#{name+1}`` band marker."""
-
     src: str
     name: str = ""
     plus: bool = False
@@ -105,27 +81,18 @@ type Segment = Literal | Construct
 
 @dataclass
 class ParsedText:
-    """A container text tokenized into literal runs and constructs."""
-
     segments: list[Segment] = field(default_factory=list)
 
     @property
     def constructs(self) -> list[Construct]:
-        """The non-literal segments in source order."""
         return [seg for seg in self.segments if not isinstance(seg, Literal)]
 
     @property
     def is_static(self) -> bool:
-        """Whether the text contains no constructs at all."""
         return not self.constructs
 
 
 def parse_path(text: str) -> tuple[PathStep, ...] | None:
-    """Parse a path expression such as ``departments#rDept.name``.
-
-    Whitespace around names and separators is ignored. Returns ``None``
-    for a malformed path (empty segment names).
-    """
     steps: list[PathStep] = []
     rest = text
     first = True
@@ -154,7 +121,6 @@ def parse_path(text: str) -> tuple[PathStep, ...] | None:
 
 
 def parse_marker(src: str, inner: str) -> Marker:
-    """Parse the inside of a ``#{...}`` marker."""
     body = inner.strip()
     if not body:
         return Marker(src, error="empty band marker")
@@ -173,7 +139,6 @@ def parse_marker(src: str, inner: str) -> Marker:
 
 
 def parse_placeholder(src: str, inner: str) -> ValueRef | Link | Image:
-    """Parse the inside of a ``${...}`` placeholder."""
     if not inner.strip():
         return ValueRef(src, error="empty placeholder")
 
@@ -235,11 +200,6 @@ def _link_image_error(src: str, *, is_image: bool, error: str) -> Link | Image:
 
 
 def tokenize(raw: str) -> ParsedText:
-    """Split raw container text into literal runs and constructs.
-
-    ``raw`` is the XML-escaped source text; constructs are assumed not to
-    contain XML entities, while literal runs are carried through verbatim.
-    """
     segments: list[Segment] = []
     pos = 0
     while True:

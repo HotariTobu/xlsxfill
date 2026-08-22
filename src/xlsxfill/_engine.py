@@ -1,10 +1,3 @@
-"""Per-sheet substitution: markers, bands, and cell values.
-
-Everything a sheet needs done is said in Excel's own terms — copy these
-rows, delete those, put this in that cell. Which rows to copy is what a
-band declaration works out to, and that is the whole of what lives here.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -46,17 +39,12 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class _Line:
-    """Where one output line came from and what it is an iteration of."""
-
     source: int
     bindings: dict[str, int]
 
 
 class SheetEngine:
-    """Processes one worksheet."""
-
     def __init__(self, book: Book, sheet: Sheet, bindings: dict[str, int]) -> None:
-        """Prepare the engine for ``sheet`` under sheet-level ``bindings``."""
         self.book = book
         self.sheet = sheet
         self.base_bindings = bindings
@@ -75,10 +63,7 @@ class SheetEngine:
         self._links: list[tuple[Cell, str]] = []
         self._pictures: list[tuple[Cell, Picture, str, str | None]] = []
 
-    # ---------------------------------------------------------------- text
-
     def parse(self, text: str) -> ParsedText:
-        """Tokenize ``text``, remembering the result."""
         found = self._parsed.get(text)
         if found is None:
             found = tokenize(text)
@@ -86,17 +71,13 @@ class SheetEngine:
         return found
 
     def load(self, hits: list[Found]) -> None:
-        """Take the sheet's cell texts as the template to work from."""
         self._texts = {
             (hit.where.row, hit.where.column): hit.text
             for hit in hits
             if isinstance(hit.where, Cell)
         }
 
-    # -------------------------------------------------------- band analysis
-
     def analyse(self) -> None:
-        """Work out the sheet's bands and which of them are used."""
         markers = [
             MarkerAt(segment, row, column, seg)
             for (row, column), text in self._texts.items()
@@ -110,13 +91,6 @@ class SheetEngine:
         self._collect_refs()
 
     def _drop_straddled(self) -> None:
-        """Invalidate a band a merged block reaches across.
-
-        A band that repeats has to be able to stand alone. A merged block
-        that starts inside one and ends outside cannot be copied without
-        being torn, so the declaration is refused rather than honoured
-        half way.
-        """
         dropped: set[int] = set()
         for top, left, bottom, right in self.sheet.merged_ranges:
             for band in self.layout.bands:
@@ -149,14 +123,7 @@ class SheetEngine:
                         self._band_refs[id(band)].append((path, row, column))
         return used
 
-    # ------------------------------------------------------------ counting
-
     def count(self, band: Band, bindings: Mapping[str, int]) -> int | None:
-        """How many times ``band`` repeats under ``bindings``.
-
-        ``None`` means it never comes round at all, because a band
-        crossing it has no blocks; it is then left as it stands.
-        """
         key = (id(band), tuple(sorted(bindings.items())))
         if key in self._counts:
             return self._counts[key]
@@ -212,10 +179,7 @@ class SheetEngine:
             contexts = widened
         return contexts
 
-    # ----------------------------------------------------------- expansion
-
     def expand(self) -> None:
-        """Copy and delete rows and columns until the bands have played out."""
         rows = [row for row, _ in self._texts]
         columns = [column for _, column in self._texts]
         if not rows:
@@ -252,11 +216,6 @@ class SheetEngine:
         *,
         vertical: bool,
     ) -> int:
-        """Play out ``bands`` over template lines ``lo``..``hi``.
-
-        ``offset`` is how far the region has already moved. Returns how
-        many lines this level added, negative when it removed some.
-        """
         added = 0
         position = lo
         for band in sorted(bands, key=lambda band: band.start):
@@ -289,13 +248,6 @@ class SheetEngine:
         *,
         vertical: bool,
     ) -> int:
-        """Leave ``count`` copies of one band's block where one stood.
-
-        The copies are made before the declaration line goes, so that a
-        reference to that line still says where it was when the copies
-        were laid out, and closes onto the last of them rather than the
-        first.
-        """
         added = 0
         if count > 1:
             self._copy(base, base + band.period - 1, count - 1, vertical=vertical)
@@ -329,10 +281,7 @@ class SheetEngine:
         else:
             self.sheet.duplicate_columns(first, last, copies=copies)
 
-    # -------------------------------------------------------- substitution
-
     def bindings_at(self, row: int, column: int) -> dict[str, int]:
-        """The iteration indices in force at one output cell."""
         bindings = dict(self.base_bindings)
         line = self.rows.get(row)
         if line is not None:
@@ -343,7 +292,6 @@ class SheetEngine:
         return bindings
 
     def origin(self, row: int, column: int) -> tuple[int, int]:
-        """The template cell one output cell was copied from."""
         vertical = self.rows.get(row)
         horizontal = self.columns.get(column)
         return (
@@ -352,7 +300,6 @@ class SheetEngine:
         )
 
     def substitute(self, hits: list[Found]) -> None:
-        """Resolve every placeholder the sheet is left holding."""
         for hit in hits:
             where = hit.where
             if isinstance(where, Cell):
@@ -362,12 +309,6 @@ class SheetEngine:
         self._attach()
 
     def _attach(self) -> None:
-        """Hang the links and pictures the cells asked for.
-
-        Left until the cells are settled, so a picture is sized against
-        the cell as it finally reads and the parts land in the workbook
-        in the order they were asked for.
-        """
         for where, url in self._links:
             self.book.excel.insert_link(where, url)
         for where, picture, fit, alt in self._pictures:
@@ -445,8 +386,6 @@ class SheetEngine:
             else:
                 pieces.append(self._value(segment, bindings, address))
         return [piece for piece in pieces if piece[0] != "skip"]
-
-    # ----------------------------------------------------------- resolving
 
     def _report(self, kind: str, construct: str, reason: str, address: str) -> str:
         return self.book.report_cell(kind, construct, reason, self.name, address)
@@ -571,7 +510,6 @@ class SheetEngine:
 def _fitted(
     picture: Picture, fit: str, frame_width: int, frame_height: int
 ) -> tuple[float, float, float, float, tuple[float, float, float, float] | None]:
-    """How big to draw a picture in a cell, and what of it to show."""
     if fit == "fill":
         return (frame_width, frame_height, 0, 0, None)
     if fit == "cover":
@@ -600,11 +538,6 @@ def _fitted(
 
 
 def _vertical_first(layout: BandLayout) -> bool:
-    """Whether rows are played out before columns.
-
-    The band that encloses the other goes first, so its copies already
-    carry the inner declaration when the inner one comes round.
-    """
     for band in layout.bands:
         if band.vertical:
             continue

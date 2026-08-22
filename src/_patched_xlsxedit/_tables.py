@@ -1,12 +1,3 @@
-"""Keeping table parts in step with the sheet under them.
-
-``xlsxedit.row_shift.shift_table_parts`` follows a table through a
-uniform shift and leaves the column names alone, which is right when the
-header row only moves. A table that gains or loses columns needs its
-names read off the header row again, and that can only be done once the
-header row says what it finally says.
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -28,7 +19,6 @@ _TABLE_COLUMN = f"{{{SML_NS}}}tableColumn"
 
 
 def remap_tables(worksheet: Worksheet, map_range: Callable[[str], str]) -> None:
-    """Move every table on ``worksheet`` through ``map_range``."""
     for table in worksheet.tables:
         if not table.ref:
             continue
@@ -38,12 +28,6 @@ def remap_tables(worksheet: Worksheet, map_range: Callable[[str], str]) -> None:
 
 
 def refresh_table_columns(workbook: Workbook) -> None:
-    """Name every table's columns after the row they sit under.
-
-    A table's column names are the text of its header row, and Excel
-    keeps the two in step. Widening a table by copying columns leaves it
-    naming fewer columns than it now covers.
-    """
     for worksheet in workbook.worksheets:
         for table in worksheet.tables:
             if not table.ref:

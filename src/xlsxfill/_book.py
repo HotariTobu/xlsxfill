@@ -1,11 +1,3 @@
-"""Workbook-level orchestration of the fill run.
-
-The whole run is said in Excel's own terms: search the workbook, copy or
-delete sheets, then put values where the search found placeholders. What
-a placeholder means, and how many times a band comes round, is all that
-belongs to this package.
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
@@ -36,20 +28,14 @@ _SHEET_PARTS: dict[str, str] = {
 
 
 class Book:
-    """One fill run over an open workbook."""
-
     def __init__(self, excel: Excel, data: Mapping[str, Value]) -> None:
-        """Prepare the run against ``excel`` with input ``data``."""
         self.excel = excel
         self.data = data
         self.problems: list[Problem] = []
 
-    # ------------------------------------------------------------ problems
-
     def report_cell(
         self, kind: str, construct: str, reason: str, sheet: str, cell: str
     ) -> str:
-        """Record a cell problem; return the message to embed."""
         problem = CellProblem(
             kind=cast("Literal['syntax', 'data']", kind),
             construct=construct,
@@ -64,7 +50,6 @@ class Book:
     def sheet_reporter(
         self, sheet: str, where: Where
     ) -> Callable[[str, str, str], str]:
-        """Build a problem sink for one string container."""
 
         def report(kind: str, construct: str, reason: str) -> str:
             problem = _problem_for(where, sheet, kind, construct, reason)
@@ -74,7 +59,6 @@ class Book:
         return report
 
     def book_reporter(self) -> Callable[[str, str, str], str]:
-        """Build a problem sink for the document properties."""
 
         def report(kind: str, construct: str, reason: str) -> str:
             problem = BookProblem(
@@ -88,10 +72,7 @@ class Book:
 
         return report
 
-    # --------------------------------------------------------------- phases
-
     def run(self) -> list[Problem]:
-        """Execute the whole fill and return the collected problems."""
         engines = []
         for sheet, bindings in self._plan_sheets():
             engine = SheetEngine(self, sheet, bindings)
@@ -112,8 +93,6 @@ class Book:
             replaced = substitute_container(hit.text, self.data, {}, report)
             if replaced is not None and replaced != hit.text:
                 self.excel.set(hit.where, replaced)
-
-    # ---------------------------------------------------- sheet repetition
 
     def _plan_sheets(self) -> list[tuple[Sheet, dict[str, int]]]:
         plan: list[tuple[Sheet, dict[str, int]]] = []
@@ -203,11 +182,8 @@ def _problem_for(
 
 
 class _NoWhere:
-    """Stands in for the tab name of a sheet not yet renamed."""
-
     @property
     def part(self) -> str:
-        """Always the tab name."""
         return "name"
 
 

@@ -1,15 +1,3 @@
-"""Reference following through arbitrary row/column mappings.
-
-``xlsxedit.row_shift`` follows references (ranges, sqrefs, defined names,
-table parts) through a uniform "insert n at row r" shift. These are the
-same followers generalized to arbitrary endpoint mappings — a uniform
-shift is the special case — plus the followers upstream does not have at
-all: formula text and drawing anchors. The generalization is a candidate
-upstream request.
-
-Everything here works on the lxml elements xlsxedit already exposes.
-"""
-
 from __future__ import annotations
 
 import re
@@ -51,22 +39,12 @@ _CNVPR = f"{{{XDR_NS}}}cNvPr"
 
 
 class PointMapper(Protocol):
-    """Maps one template coordinate to the output coordinate."""
-
-    def __call__(self, coord: int, *, absolute: bool, end: bool) -> int:
-        """Map ``coord``; ``end`` marks the closing endpoint of a range."""
-        ...
+    def __call__(self, coord: int, *, absolute: bool, end: bool) -> int: ...
 
 
 class EndpointMapper(Protocol):
-    """Maps one range endpoint to the output coordinate."""
+    def __call__(self, coord: int, *, end: bool) -> int: ...
 
-    def __call__(self, coord: int, *, end: bool) -> int:
-        """Map ``coord``; ``end`` marks the closing endpoint of a range."""
-        ...
-
-
-# ------------------------------------------------------------- range refs
 
 _RANGE_RE = re.compile(
     r"^(\$?)([A-Za-z]{1,3})(\$?)(\d+)(?::(\$?)([A-Za-z]{1,3})(\$?)(\d+))?$",
@@ -74,7 +52,6 @@ _RANGE_RE = re.compile(
 
 
 def remap_range_ref(ref: str, map_row: EndpointMapper, map_col: EndpointMapper) -> str:
-    """Remap an A1-style range (``$`` markers preserved)."""
     m = _RANGE_RE.match(ref)
     if m is None:
         return ref
@@ -93,7 +70,6 @@ def remap_range_ref(ref: str, map_row: EndpointMapper, map_col: EndpointMapper) 
 
 
 def remap_sqref(sqref: str, map_row: EndpointMapper, map_col: EndpointMapper) -> str:
-    """Remap a space-separated list of ranges."""
     return " ".join(remap_range_ref(part, map_row, map_col) for part in sqref.split())
 
 
@@ -102,13 +78,6 @@ def remap_sheet_references(
     map_row: EndpointMapper,
     map_col: EndpointMapper,
 ) -> None:
-    """Follow merge, CF, hyperlink, and dataValidation refs, in place.
-
-    The arbitrary-mapping counterpart of
-    ``xlsxedit.row_shift.shift_sheet_row_references``. Merged ranges are
-    remapped one-to-one here; duplicating them per copy is the caller's,
-    which upstream's uniform shift never has to do.
-    """
     block = ws_element.find(_MERGE_CELLS)
     if block is not None:
         for merge in block.findall(_MERGE_CELL):
@@ -126,7 +95,6 @@ def remap_sheet_references(
 
 
 def set_merged_refs(ws_element: _Element, refs: list[str]) -> None:
-    """Replace the ``<mergeCells>`` block with ``refs``."""
     block = ws_element.find(_MERGE_CELLS)
     if block is None:
         return
@@ -143,14 +111,11 @@ def set_merged_refs(ws_element: _Element, refs: list[str]) -> None:
 
 
 def merged_refs(ws_element: _Element) -> list[str]:
-    """The ``ref`` of every ``<mergeCell>`` on a worksheet."""
     block = ws_element.find(_MERGE_CELLS)
     if block is None:
         return []
     return [m.get("ref", "") for m in block.findall(_MERGE_CELL) if m.get("ref")]
 
-
-# ------------------------------------------------------------ defined names
 
 _DEFINED_NAME_REF_RE = re.compile(
     r"('(?:[^']|'')+'|[A-Za-z0-9_.]+)!"
@@ -162,11 +127,6 @@ def remap_defined_name(
     text: str,
     mappers_for_sheet: Mapping[str, tuple[EndpointMapper, EndpointMapper]],
 ) -> str:
-    """Remap sheet-qualified ranges in a defined-name value.
-
-    ``mappers_for_sheet`` maps a sheet name to its ``(map_row, map_col)``
-    pair; sheets without an entry are left untouched.
-    """
 
     def _sub(m: re.Match[str]) -> str:
         sheet_ref, ref = m.group(1), m.group(2)
@@ -185,11 +145,6 @@ def remap_defined_names(
     workbook_element: _Element,
     mappers_for_sheet: Mapping[str, tuple[EndpointMapper, EndpointMapper]],
 ) -> None:
-    """Follow every ``<definedName>`` through the mappings, in place.
-
-    The arbitrary-mapping counterpart of
-    ``xlsxedit.row_shift.shift_defined_names``.
-    """
     block = workbook_element.find(_DEFINED_NAMES)
     if block is None:
         return
@@ -199,8 +154,6 @@ def remap_defined_names(
             continue
         element.text = remap_defined_name(text, mappers_for_sheet)
 
-
-# -------------------------------------------------------- formula rebasing
 
 _REF_RE = re.compile(
     r"""
@@ -220,13 +173,6 @@ _BOUNDARY_AFTER = set(
 
 
 def rebase_formula(text: str, map_col: PointMapper, map_row: PointMapper) -> str:
-    """Rewrite the cell references of one formula.
-
-    xlsxedit never rewrites formula text — ``insert_rows`` shifts
-    structural references only, and ``insert_columns`` documents the
-    omission. Double-quoted strings and sheet-qualified references are
-    left as they are; every bare A1-style reference or range is mapped.
-    """
     out: list[str] = []
     pos = 0
     while pos < len(text):
@@ -252,7 +198,6 @@ def rebase_formulas(
     map_col: PointMapper,
     map_row: PointMapper,
 ) -> None:
-    """Rebase every ``<f>`` under one row element, in place."""
     for f_elm in row_element.iter(_F):
         text = f_elm.text
         if not text:
@@ -306,21 +251,11 @@ def _map_single(
     return f"{col_abs}{index_to_col(new_col)}{row_abs}{new_row}"
 
 
-# ------------------------------------------------------------ table parts
-
-
 def remap_table(
     table_element: _Element,
     map_range: Callable[[str], str],
     header_text: Callable[[int, int], str],
 ) -> None:
-    """Follow one table part through a range mapping, in place.
-
-    The arbitrary-mapping counterpart of
-    ``xlsxedit.row_shift.shift_table_parts``; the column names are
-    rebuilt from ``header_text(row, col)`` over the new header row, which
-    a uniform shift never needs.
-    """
     ref = table_element.get("ref")
     if not ref:
         return
@@ -344,9 +279,6 @@ def remap_table(
         columns.append(column)
 
 
-# --------------------------------------------------------- drawing anchors
-
-
 _TWO_CELL = f"{{{XDR_NS}}}twoCellAnchor"
 _ONE_CELL = f"{{{XDR_NS}}}oneCellAnchor"
 _FROM = f"{{{XDR_NS}}}from"
@@ -359,14 +291,6 @@ _CNVPR = f"{{{XDR_NS}}}cNvPr"
 def expand_anchors(
     part: Part, placements: Callable[[int, int], list[tuple[int, int]]]
 ) -> None:
-    """Duplicate cell-anchored shapes to their mapped placements.
-
-    xlsxedit's ``insert_rows`` documents that it does not move drawing
-    anchors; this follows them. ``placements(row, col)`` receives a
-    shape's 1-based anchor row and 0-based anchor column and returns the
-    output positions in duplication order; an empty list drops the shape.
-    Anchors with ``editAs="absolute"`` are left where they are.
-    """
     from xlsxedit.oxml.parser import parse_xml, serialize_xml
 
     root = parse_xml(part.blob)
@@ -416,7 +340,6 @@ def _shift_anchor(anchor: _Element, rows: int, columns: int) -> None:
 
 
 def _renumber(root: _Element) -> None:
-    """Number the shapes the way they now read, top to bottom."""
     names = list(root.iter(_CNVPR))
     if not names:
         return
@@ -429,18 +352,13 @@ def _renumber(root: _Element) -> None:
             name.set("name", re.sub(r"\d+$", str(new_id), label))
 
 
-# --------------------------------------------------- sheet renames (formulas)
-
-
 def quote_sheet_name(name: str) -> str:
-    """Quote a sheet name for use in a formula reference prefix."""
     if name.replace("_", "").isalnum():
         return name
     return "'" + name.replace("'", "''") + "'"
 
 
 def sheet_prefix_patterns(old: str) -> list[str]:
-    """The formula prefixes that reference sheet ``old``."""
     patterns = [f"'{old.replace(chr(39), chr(39) * 2)}'!"]
     if quote_sheet_name(old) == old:
         patterns.append(f"{old}!")
@@ -448,7 +366,6 @@ def sheet_prefix_patterns(old: str) -> list[str]:
 
 
 def rename_in_formula_text(text: str, renames: list[tuple[str, str]]) -> str:
-    """Apply sheet renames to one formula string."""
     for old, new in renames:
         if old == new:
             continue
@@ -462,11 +379,6 @@ def rename_sheets_in_formulas(
     elements: Iterable[_Element],
     renames: list[tuple[str, str]],
 ) -> None:
-    """Apply sheet renames to every ``<f>`` under ``elements``, in place.
-
-    The formula-following extension of
-    ``xlsxedit.Workbook.rename_worksheet``, which renames the sheet only.
-    """
     pairs = [(old, new) for old, new in renames if old != new]
     if not pairs:
         return
@@ -479,12 +391,6 @@ def rename_sheets_in_formulas(
 
 
 def rename_sheets_in_charts(workbook: Workbook, renames: list[tuple[str, str]]) -> None:
-    """Apply sheet renames to the series formulas of every chart.
-
-    A chart names the sheet its data comes from, so renaming a sheet and
-    leaving the chart alone points it at a sheet that is no longer there.
-    ``Workbook.rename_worksheet`` renames the tab and stops.
-    """
     pairs = [(old, new) for old, new in renames if old != new]
     if not pairs:
         return
