@@ -1,0 +1,13 @@
+# xlsxfill
+
+> Generate an xlsx by merging a template xlsx with data.
+
+## Docs
+
+- [Home](https://hotaritobu.github.io/xlsxfill/0.1.2/index.md): What the library does, how the output is produced, and a worked example.
+- [Syntax](https://hotaritobu.github.io/xlsxfill/0.1.2/syntax.md): The placeholder notation in full, and the message each construct embeds when it fails.
+- [API](https://hotaritobu.github.io/xlsxfill/0.1.2/api.md): The signature of every public symbol, with its docstring.
+
+## Optional
+
+- [llms-full.txt](https://hotaritobu.github.io/xlsxfill/0.1.2/llms-full.txt): the pages above, concatenated into one file.
