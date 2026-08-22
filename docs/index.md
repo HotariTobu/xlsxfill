@@ -54,7 +54,8 @@ fill(
 Row 2 is duplicated once per item, the row holding `#{r+1}` is removed, and the
 formula is rebased for each copy.
 
-The notation itself is documented in [Syntax](syntax.md).
+The notation itself is documented in [Syntax](syntax.md); real workbooks run
+through the library are shown in [Samples](samples.md).
 
 ## Errors
 

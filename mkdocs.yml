@@ -10,14 +10,25 @@ theme:
 
 nav:
   - Home: index.md
+  - Samples: samples.md
   - Syntax: syntax.md
   - API: api.md
 
 plugins:
+  - search
   - mkdocstrings:
       handlers:
         python:
           paths: [src]
+
+hooks:
+  - .mkdocs/hooks/samples.py
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
 
 extra:
   version:
