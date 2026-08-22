@@ -1,6 +1,6 @@
 [project]
 name = "xlsxfill"
-version = "0.1.1"
+version = "0.1.2"
 description = "Generate an xlsx by merging a template xlsx with data."
 readme = "README.md"
 authors = [
