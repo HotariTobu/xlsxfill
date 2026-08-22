@@ -49,6 +49,7 @@ plugins:
 
 hooks:
   - .mkdocs/hooks/samples.py
+  - .mkdocs/hooks/llms.py
 
 markdown_extensions:
   - admonition

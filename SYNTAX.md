@@ -1,4 +1,4 @@
-# xlsxfill Placeholder Syntax
+# Syntax
 
 Generate an xlsx by merging a template xlsx with data.
 
