@@ -1,4 +1,4 @@
-# xlsxedit / _patched_xlsxedit / _excel / xlsxfill
+# xlsxfill src
 
 Dependency direction: `xlsxedit` (PyPI) ← `_patched_xlsxedit` ← `_excel` ← `xlsxfill`.
 Each layer imports only the one below it.
