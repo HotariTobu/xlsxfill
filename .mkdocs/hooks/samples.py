@@ -28,7 +28,10 @@ class _Asset(Protocol):
 
 def _viewer(url: str) -> str:
     src = VIEWER + quote(url, safe="")
-    return f'<iframe src="{src}" width="100%" height="480" style="border:0"></iframe>'
+    return (
+        f'<iframe src="{src}" width="100%" height="480" '
+        'style="border:0" loading="lazy"></iframe>'
+    )
 
 
 def _fence(language: str, body: str) -> str:
@@ -59,7 +62,7 @@ def _block(stem: str, name: str, base: str, assets: Mapping[str, _Asset]) -> str
             "",
             indent(_viewer(template), TAB_INDENT),
             "",
-            '=== "Input"',
+            '===+ "Input"',
             "",
             indent(_fence("json", data), TAB_INDENT),
             "",
