@@ -75,6 +75,16 @@ jobs:
           uv run mike deploy --push --update-aliases "$VERSION" latest
           uv run mike set-default --push latest
 
+      - name: Publish llms.txt at the site root
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        run: |
+          git worktree add "$RUNNER_TEMP/root" gh-pages
+          cp site/llms.txt site/llms-full.txt "$RUNNER_TEMP/root/"
+          git -C "$RUNNER_TEMP/root" add llms.txt llms-full.txt
+          git -C "$RUNNER_TEMP/root" diff --cached --quiet ||
+            git -C "$RUNNER_TEMP/root" commit -m "Publish llms.txt at the site root"
+          git -C "$RUNNER_TEMP/root" push origin gh-pages
+
       - name: Manual dispatch — deploy dev
         if: github.event_name == 'workflow_dispatch'
         run: uv run mike deploy --push --update-aliases dev
