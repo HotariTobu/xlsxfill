@@ -57,6 +57,10 @@ markdown_extensions:
       alternate_style: true
 
 extra:
+  social:
+    - icon: simple/pypi
+      link: https://pypi.org/project/xlsxfill/
+      name: xlsxfill on PyPI
   version:
     provider: mike
     default: latest

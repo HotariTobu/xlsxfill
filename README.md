@@ -1,5 +1,10 @@
 # xlsxfill
 
+[![PyPI](https://img.shields.io/pypi/v/xlsxfill)](https://pypi.org/project/xlsxfill/)
+[![Python](https://img.shields.io/pypi/pyversions/xlsxfill)](https://pypi.org/project/xlsxfill/)
+[![Preflight & Test](https://github.com/HotariTobu/xlsxfill/actions/workflows/preflight-and-test.yml/badge.svg)](https://github.com/HotariTobu/xlsxfill/actions/workflows/preflight-and-test.yml)
+[![License](https://img.shields.io/pypi/l/xlsxfill)](LICENSE)
+
 Generate an xlsx by merging a template xlsx with data.
 
 The output is built through xlsxedit, so the elements of the original template
