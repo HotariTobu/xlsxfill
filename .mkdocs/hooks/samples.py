@@ -7,6 +7,9 @@ from urllib.parse import quote
 MARKER = "<!-- SAMPLES -->"
 VIEWER = "https://view.officeapps.live.com/op/embed.aspx?src="
 
+API_PATH = "api.md"
+API_PACKAGE = "xlsxfill"
+
 ASSET_PATH = "samples/"
 TEMPLATE_SUFFIX = ".template.xlsx"
 INPUT_SUFFIX = ".input.json"
@@ -38,6 +41,10 @@ def _fence(language: str, body: str) -> str:
     return f"```{language}\n{body}\n```"
 
 
+def _reference(name: str) -> str:
+    return f"[{name}]({API_PATH}#{API_PACKAGE}.{name})"
+
+
 def _outcome(stem: str, base: str, assets: Mapping[str, _Asset]) -> tuple[str, str]:
     expected = assets.get(stem + EXPECTED_SUFFIX)
     if expected is not None:
@@ -47,7 +54,7 @@ def _outcome(stem: str, base: str, assets: Mapping[str, _Asset]) -> tuple[str, s
         "Mapping[str, str]", json.loads(assets[stem + ERROR_SUFFIX].content_string)
     )
     message = indent(_fence("text", error["message"]), TAB_INDENT)
-    return "Error", f'!!! failure "{error["type"]}"\n\n{message}'
+    return "Error", f'!!! failure "{_reference(error["type"])}"\n\n{message}'
 
 
 def _block(stem: str, name: str, base: str, assets: Mapping[str, _Asset]) -> str:

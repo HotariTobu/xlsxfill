@@ -31,6 +31,9 @@ exclude_docs: |
   AGENTS.md
   CLAUDE.md
 
+validation:
+  anchors: warn
+
 nav:
   - Home: index.md
   - Samples: samples.md
