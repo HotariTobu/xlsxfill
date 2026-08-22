@@ -1,0 +1,6 @@
+{
+  "sheets": [
+    {"name": "April", "customer": "ACME"},
+    {"name": "May", "customer": "Globex"}
+  ]
+}

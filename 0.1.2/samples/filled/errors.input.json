@@ -1,0 +1,17 @@
+{
+  "qty": "three",
+  "name": 1,
+  "ok": "yes",
+  "d": {"$datetime": "2026-08-17T09:30"},
+  "t": 5,
+  "dt": {"$date": "2026-08-17"},
+  "profile": {"age": 30},
+  "scores": [1],
+  "items": ["a", "b", "c"],
+  "meetingAt": {"$datetime": "2026-08-17T09:30+00:00"},
+  "customer": null,
+  "title": "April",
+  "first": "Alice",
+  "tags": ["a", "b"],
+  "labels": ["a", "b"]
+}

@@ -1,0 +1,6 @@
+{
+  "sheets": [
+    {"name": "A", "items": ["x", "y"]},
+    {"name": "B", "items": ["z"]}
+  ]
+}
